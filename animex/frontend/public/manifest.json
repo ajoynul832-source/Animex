@@ -1,0 +1,13 @@
+{
+  "name": "AnimeX",
+  "short_name": "AnimeX",
+  "description": "Watch anime online free in HD",
+  "start_url": "/home",
+  "display": "standalone",
+  "background_color": "#18191f",
+  "theme_color": "#18191f",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
