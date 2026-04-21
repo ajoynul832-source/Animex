@@ -12,11 +12,14 @@ const searchRoutes = require('./routes/search');
 const app  = express();
 const PORT = process.env.PORT || 5000;
 
-// ── Trust proxy (for rate limiting behind Nginx/Railway) ─────────
+// ── Trust proxy ───────────────────────────────────────────────────
 app.set('trust proxy', 1);
 
 // ── CORS ──────────────────────────────────────────────────────────
-const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000').split(',').map(s => s.trim());
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000')
+  .split(',')
+  .map(s => s.trim());
+
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
@@ -40,16 +43,18 @@ const apiLimiter = rateLimit({
   message: { error: 'Too many requests. Please slow down.' },
   skip: (req) => req.path === '/health',
 });
+
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
   message: { error: 'Too many auth attempts. Try again in 15 minutes.' },
 });
+
 app.use('/api/', apiLimiter);
 app.use('/api/auth/login',    authLimiter);
 app.use('/api/auth/register', authLimiter);
 
-// ── Request logging (dev) ─────────────────────────────────────────
+// ── Logging ───────────────────────────────────────────────────────
 if (process.env.NODE_ENV !== 'production') {
   app.use((req, _, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
@@ -63,7 +68,7 @@ app.use('/api/anime',  animeRoutes);
 app.use('/api/user',   userRoutes);
 app.use('/api/search', searchRoutes);
 
-// ── Health check ──────────────────────────────────────────────────
+// ── Health ────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {
   const { cache } = require('./cache');
   res.json({
@@ -82,15 +87,20 @@ app.use((req, res) => {
   res.status(404).json({ error: `${req.method} ${req.path} not found` });
 });
 
-// ── Global error handler ──────────────────────────────────────────
+// ── Error handler ─────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   const status = err.status || 500;
   if (status >= 500) console.error('[Server Error]', err);
   res.status(status).json({ error: err.message || 'Internal server error' });
 });
 
-// ── MongoDB + startup ─────────────────────────────────────────────
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/animex';
+// ── MongoDB FIXED ─────────────────────────────────────────────────
+const MONGO_URI = process.env.MONGO_URI;
+
+if (!MONGO_URI) {
+  console.error("❌ MONGO_URI not found in environment variables");
+  process.exit(1);
+}
 
 mongoose.connect(MONGO_URI, {
   serverSelectionTimeoutMS: 8000,
@@ -100,15 +110,18 @@ mongoose.connect(MONGO_URI, {
 })
 .then(() => {
   const safe = MONGO_URI.replace(/:\/\/[^@]+@/, '://***@');
-  console.log(`✅  MongoDB: ${safe}`);
-  app.listen(PORT, () => console.log(`🚀  API: http://localhost:${PORT}`));
+  console.log(`✅ MongoDB: ${safe}`);
+
+  app.listen(PORT, () => {
+    console.log(`🚀 API running on port ${PORT}`);
+  });
 })
 .catch(err => {
-  console.error('❌  MongoDB failed:', err.message);
+  console.error('❌ MongoDB failed:', err.message);
   process.exit(1);
 });
 
-// Graceful shutdown
+// ── Graceful shutdown ─────────────────────────────────────────────
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, closing gracefully...');
   await mongoose.connection.close();
