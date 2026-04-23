@@ -1,5 +1,3 @@
-'use client';
-
 import '@/styles/globals.css';
 import { AuthProvider } from '@/lib/AuthContext';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -16,15 +14,16 @@ export const metadata = {
   description: 'Watch anime online free in HD. Latest sub & dub episodes. No ads.',
   themeColor: '#18191f',
   manifest: '/manifest.json',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover',
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }) {
-  const closeSidebar = () => {
-    document.getElementById('site-sidebar')?.classList.remove('open');
-    document.getElementById('sidebar-overlay')?.classList.remove('active');
-  };
-
   return (
     <html lang="en">
       <head>
@@ -34,7 +33,10 @@ export default function RootLayout({ children }) {
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta
+          name="apple-mobile-web-app-capable"
+          content="yes"
+        />
         <meta
           name="apple-mobile-web-app-status-bar-style"
           content="black-translucent"
@@ -47,10 +49,8 @@ export default function RootLayout({ children }) {
             <ProgressBar />
             <Navbar />
 
-            <div
-              id="sidebar-overlay"
-              onClick={closeSidebar}
-            />
+            {/* no onClick here */}
+            <div id="sidebar-overlay" />
 
             <div id="wrapper">
               <Sidebar />
