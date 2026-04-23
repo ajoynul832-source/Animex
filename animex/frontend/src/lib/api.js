@@ -1,6 +1,4 @@
-const API =
-  process.env.NEXT_PUBLIC_API_URL ||
-  'https://animex-dhhs.onrender.com/api';
+const API = 'https://animex-dhhs.onrender.com/api';
 
 class ApiError extends Error {
   constructor(message, status) {
