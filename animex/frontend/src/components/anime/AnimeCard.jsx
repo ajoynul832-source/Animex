@@ -5,19 +5,20 @@ export default function AnimeCard({ anime, progress }) {
   if (!anime) return null;
 
   const id =
-    anime.mal_id ||
     anime.id ||
+    anime.mal_id ||
     anime.animeId;
 
   const name =
-    anime.title ||
     anime.name ||
+    anime.title ||
     anime.animeName ||
     'Unknown Anime';
 
   const poster =
-    anime.images?.jpg?.image_url ||
     anime.poster ||
+    anime.images?.jpg?.large_image_url ||
+    anime.images?.jpg?.image_url ||
     anime.animeImage ||
     '/no-poster.svg';
 
@@ -27,14 +28,12 @@ export default function AnimeCard({ anime, progress }) {
     '';
 
   const rating =
-    anime.score ||
     anime.rating ||
+    anime.score ||
     null;
 
-  const sub = anime.episodes?.sub ?? null;
-  const dub = anime.episodes?.dub ?? null;
-
-  const pct = progress?.percent || 0;
+  const pct =
+    progress?.percent || 0;
 
   return (
     <div className="flw-item">
@@ -49,7 +48,8 @@ export default function AnimeCard({ anime, progress }) {
           alt={name}
           loading="lazy"
           onError={(e) => {
-            e.currentTarget.src = '/no-poster.svg';
+            e.currentTarget.src =
+              '/no-poster.svg';
           }}
         />
 
@@ -82,26 +82,15 @@ export default function AnimeCard({ anime, progress }) {
           </div>
         )}
 
-        <div className="tick">
-          {sub !== null && (
-            <span className="tick-item tick-sub">
-              SUB {sub}
-            </span>
-          )}
-
-          {dub !== null && (
-            <span className="tick-item tick-dub">
-              DUB {dub}
-            </span>
-          )}
-        </div>
-
         {pct > 0 && (
           <div className="progress-bar">
             <div
               className="progress-bar-fill"
               style={{
-                width: `${Math.min(pct, 100)}%`
+                width: `${Math.min(
+                  pct,
+                  100
+                )}%`
               }}
             />
           </div>
