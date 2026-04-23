@@ -13,9 +13,7 @@ export default function HomePage() {
       .then((d) => {
         setHome(d?.data || null);
       })
-      .catch((err) => {
-        console.error(err);
-      })
+      .catch(console.error)
       .finally(() => {
         setLoading(false);
       });
@@ -27,6 +25,28 @@ export default function HomePage() {
         slides={home?.spotlightAnimes || []}
         loading={loading}
       />
+
+      <div
+        style={{
+          padding: 30,
+          color: 'white'
+        }}
+      >
+        <h2>Latest Episodes</h2>
+
+        {(home?.latestEpisodeAnimes || [])
+          .slice(0, 5)
+          .map((a, i) => (
+            <div
+              key={i}
+              style={{
+                marginBottom: 10
+              }}
+            >
+              {a.name}
+            </div>
+          ))}
+      </div>
     </div>
   );
 }
