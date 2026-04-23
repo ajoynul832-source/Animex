@@ -3,9 +3,11 @@ const PageView = require('../models/PageView');
 const { cachedFetch, TTL } = require('../cache');
 
 /*
-Using stable anime source
+REAL stable source:
+Jikan API (MyAnimeList)
+No broken mirror APIs
 */
-const API = process.env.ANIWATCH_API || 'https://consumet-api-production.up.railway.app';
+const API = 'https://api.jikan.moe/v4';
 
 async function apiFetch(url) {
   const res = await fetch(url, { timeout: 15000 });
@@ -24,15 +26,29 @@ async function apiFetch(url) {
 
 exports.getHome = async (req, res) => {
   try {
-    const data = await cachedFetch(
-      'home',
+    const top = await cachedFetch(
+      'home:top',
       TTL.HOME,
-      () => apiFetch(`${API}/gogoanime/home`)
+      () => apiFetch(`${API}/top/anime?page=1`)
     );
 
-    res.json(data);
+    const season = await cachedFetch(
+      'home:season',
+      TTL.HOME,
+      () => apiFetch(`${API}/seasons/now?page=1`)
+    );
+
+    res.json({
+      data: {
+        topAiringAnimes: season?.data || [],
+        spotlightAnimes: top?.data?.slice(0, 10) || [],
+        trendingAnimes: top?.data?.slice(0, 20) || []
+      }
+    });
   } catch (err) {
-    res.status(502).json({ error: err.message });
+    res.status(502).json({
+      error: err.message
+    });
   }
 };
 
@@ -40,11 +56,17 @@ exports.getHome = async (req, res) => {
 
 exports.getSchedule = async (req, res) => {
   try {
+    const data = await cachedFetch(
+      'schedule',
+      TTL.HOME,
+      () => apiFetch(`${API}/schedules`)
+    );
+
     res.json({
-      data: []
+      data: data?.data || []
     });
   } catch (err) {
-    res.status(500).json({
+    res.status(502).json({
       error: err.message
     });
   }
@@ -70,14 +92,14 @@ exports.searchAnime = async (req, res) => {
       TTL.BROWSE,
       () =>
         apiFetch(
-          `${API}/gogoanime/${encodeURIComponent(keyword)}?page=${page}`
+          `${API}/anime?q=${encodeURIComponent(keyword)}&page=${page}`
         )
     );
 
     res.json({
       data: {
-        animes: data?.results || [],
-        totalPages: data?.hasNextPage ? Number(page) + 1 : Number(page)
+        animes: data?.data || [],
+        totalPages: data?.pagination?.last_visible_page || 1
       }
     });
   } catch (err) {
@@ -93,25 +115,22 @@ exports.getAzList = async (req, res) => {
   try {
     const { letter = 'all', page = 1 } = req.query;
 
-    let query = '';
+    let url = `${API}/top/anime?page=${page}`;
 
     if (letter !== 'all') {
-      query = letter;
+      url = `${API}/anime?q=${letter}&page=${page}`;
     }
 
     const data = await cachedFetch(
       `az:${letter}:${page}`,
       TTL.BROWSE,
-      () =>
-        apiFetch(
-          `${API}/gogoanime/${encodeURIComponent(query)}?page=${page}`
-        )
+      () => apiFetch(url)
     );
 
     res.json({
       data: {
-        animes: data?.results || [],
-        totalPages: data?.hasNextPage ? Number(page) + 1 : Number(page)
+        animes: data?.data || [],
+        totalPages: data?.pagination?.last_visible_page || 1
       }
     });
   } catch (err) {
@@ -133,14 +152,14 @@ exports.getByGenre = async (req, res) => {
       TTL.BROWSE,
       () =>
         apiFetch(
-          `${API}/gogoanime/${encodeURIComponent(genre)}?page=${page}`
+          `${API}/anime?q=${encodeURIComponent(genre)}&page=${page}`
         )
     );
 
     res.json({
       data: {
-        animes: data?.results || [],
-        totalPages: data?.hasNextPage ? Number(page) + 1 : Number(page)
+        animes: data?.data || [],
+        totalPages: data?.pagination?.last_visible_page || 1
       }
     });
   } catch (err) {
@@ -159,7 +178,7 @@ exports.getAnimeInfo = async (req, res) => {
     const data = await cachedFetch(
       `info:${id}`,
       TTL.ANIME_INFO,
-      () => apiFetch(`${API}/gogoanime/info/${id}`)
+      () => apiFetch(`${API}/anime/${id}/full`)
     );
 
     res.json(data);
@@ -179,12 +198,12 @@ exports.getEpisodes = async (req, res) => {
     const data = await cachedFetch(
       `episodes:${id}`,
       TTL.EPISODES,
-      () => apiFetch(`${API}/gogoanime/info/${id}`)
+      () => apiFetch(`${API}/anime/${id}/episodes`)
     );
 
     res.json({
       data: {
-        episodes: data?.episodes || []
+        episodes: data?.data || []
       }
     });
   } catch (err) {
@@ -197,46 +216,28 @@ exports.getEpisodes = async (req, res) => {
 /* ───────────────── SOURCES ───────────────── */
 
 exports.getSources = async (req, res) => {
-  try {
-    const { episodeId } = req.query;
-
-    if (!episodeId) {
-      return res.status(400).json({
-        error: 'episodeId required'
-      });
+  res.json({
+    data: {
+      sources: [],
+      note: 'Streaming sources removed from Jikan backend'
     }
-
-    const data = await cachedFetch(
-      `sources:${episodeId}`,
-      TTL.SOURCES,
-      () => apiFetch(`${API}/gogoanime/watch/${episodeId}`)
-    );
-
-    res.json(data);
-  } catch (err) {
-    res.status(502).json({
-      error: err.message
-    });
-  }
+  });
 };
 
-/* ───────────────── CATEGORY HELPER ───────────────── */
+/* ───────────────── CATEGORY HELPERS ───────────────── */
 
-async function browseSearch(res, cacheKey, keyword, page = 1) {
+async function browseTop(res, cacheKey, page = 1) {
   try {
     const data = await cachedFetch(
       cacheKey,
       TTL.BROWSE,
-      () =>
-        apiFetch(
-          `${API}/gogoanime/${encodeURIComponent(keyword)}?page=${page}`
-        )
+      () => apiFetch(`${API}/top/anime?page=${page}`)
     );
 
     res.json({
       data: {
-        animes: data?.results || [],
-        totalPages: data?.hasNextPage ? Number(page) + 1 : Number(page)
+        animes: data?.data || [],
+        totalPages: data?.pagination?.last_visible_page || 1
       }
     });
   } catch (err) {
@@ -247,28 +248,28 @@ async function browseSearch(res, cacheKey, keyword, page = 1) {
 }
 
 exports.getTopAiring = (req, res) =>
-  browseSearch(res, `top:${req.query.page || 1}`, 'top-airing', req.query.page || 1);
+  browseTop(res, `top:${req.query.page || 1}`, req.query.page || 1);
 
 exports.getMostPopular = (req, res) =>
-  browseSearch(res, `popular:${req.query.page || 1}`, 'popular', req.query.page || 1);
+  browseTop(res, `popular:${req.query.page || 1}`, req.query.page || 1);
 
 exports.getMostFavorite = (req, res) =>
-  browseSearch(res, `favorite:${req.query.page || 1}`, 'favorite', req.query.page || 1);
+  browseTop(res, `favorite:${req.query.page || 1}`, req.query.page || 1);
 
 exports.getMovies = (req, res) =>
-  browseSearch(res, `movies:${req.query.page || 1}`, 'movie', req.query.page || 1);
+  browseTop(res, `movies:${req.query.page || 1}`, req.query.page || 1);
 
 exports.getTvSeries = (req, res) =>
-  browseSearch(res, `tv:${req.query.page || 1}`, 'tv', req.query.page || 1);
+  browseTop(res, `tv:${req.query.page || 1}`, req.query.page || 1);
 
 exports.getNewSeason = (req, res) =>
-  browseSearch(res, `new:${req.query.page || 1}`, 'new-season', req.query.page || 1);
+  browseTop(res, `new:${req.query.page || 1}`, req.query.page || 1);
 
 exports.getCompleted = (req, res) =>
-  browseSearch(res, `completed:${req.query.page || 1}`, 'completed', req.query.page || 1);
+  browseTop(res, `completed:${req.query.page || 1}`, req.query.page || 1);
 
 exports.getOngoing = (req, res) =>
-  browseSearch(res, `ongoing:${req.query.page || 1}`, 'ongoing', req.query.page || 1);
+  browseTop(res, `ongoing:${req.query.page || 1}`, req.query.page || 1);
 
 /* ───────────────── STATS ───────────────── */
 
@@ -331,10 +332,9 @@ exports.setReaction = async (req, res) => {
       });
     }
 
-    const field =
-      reaction === 'like'
-        ? 'likeCount'
-        : 'dislikeCount';
+    const field = reaction === 'like'
+      ? 'likeCount'
+      : 'dislikeCount';
 
     const stats = await PageView.findOneAndUpdate(
       { pageId },
