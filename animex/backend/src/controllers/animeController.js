@@ -2,10 +2,6 @@ const fetch = require('node-fetch');
 const PageView = require('../models/PageView');
 const { cachedFetch, TTL } = require('../cache');
 
-/*
-Professional stable source:
-Using Consumet instead of dead random mirror
-*/
 const API = process.env.ANIWATCH_API || 'https://api-consumet.vercel.app';
 
 async function apiFetch(url) {
@@ -21,14 +17,14 @@ async function apiFetch(url) {
   return res.json();
 }
 
-/* ───────────────── HOME ───────────────── */
+/* ───────── HOME ───────── */
 
 exports.getHome = async (req, res) => {
   try {
     const data = await cachedFetch(
       'home',
       TTL.HOME,
-      () => apiFetch(`${API}/anime/gogoanime/home`)
+      () => apiFetch(`${API}/gogoanime/home`)
     );
 
     res.json(data);
@@ -37,14 +33,11 @@ exports.getHome = async (req, res) => {
   }
 };
 
-/* ───────────────── SEARCH ───────────────── */
+/* ───────── SEARCH ───────── */
 
 exports.searchAnime = async (req, res) => {
   try {
-    const {
-      keyword = '',
-      page = 1
-    } = req.query;
+    const { keyword = '', page = 1 } = req.query;
 
     if (!keyword.trim()) {
       return res.json({
@@ -60,7 +53,7 @@ exports.searchAnime = async (req, res) => {
       TTL.BROWSE,
       () =>
         apiFetch(
-          `${API}/anime/gogoanime/${encodeURIComponent(keyword)}?page=${page}`
+          `${API}/gogoanime/${encodeURIComponent(keyword)}?page=${page}`
         )
     );
 
@@ -75,14 +68,11 @@ exports.searchAnime = async (req, res) => {
   }
 };
 
-/* ───────────────── A-Z LIST ───────────────── */
+/* ───────── A-Z LIST ───────── */
 
 exports.getAzList = async (req, res) => {
   try {
-    const {
-      letter = 'all',
-      page = 1
-    } = req.query;
+    const { letter = 'all', page = 1 } = req.query;
 
     let query = '';
 
@@ -95,7 +85,7 @@ exports.getAzList = async (req, res) => {
       TTL.BROWSE,
       () =>
         apiFetch(
-          `${API}/anime/gogoanime/${encodeURIComponent(query)}?page=${page}`
+          `${API}/gogoanime/${encodeURIComponent(query)}?page=${page}`
         )
     );
 
@@ -110,7 +100,7 @@ exports.getAzList = async (req, res) => {
   }
 };
 
-/* ───────────────── INFO ───────────────── */
+/* ───────── INFO ───────── */
 
 exports.getAnimeInfo = async (req, res) => {
   try {
@@ -119,7 +109,7 @@ exports.getAnimeInfo = async (req, res) => {
     const data = await cachedFetch(
       `info:${id}`,
       TTL.ANIME_INFO,
-      () => apiFetch(`${API}/anime/gogoanime/info/${id}`)
+      () => apiFetch(`${API}/gogoanime/info/${id}`)
     );
 
     res.json(data);
@@ -128,7 +118,7 @@ exports.getAnimeInfo = async (req, res) => {
   }
 };
 
-/* ───────────────── EPISODES ───────────────── */
+/* ───────── EPISODES ───────── */
 
 exports.getEpisodes = async (req, res) => {
   try {
@@ -137,7 +127,7 @@ exports.getEpisodes = async (req, res) => {
     const data = await cachedFetch(
       `episodes:${id}`,
       TTL.EPISODES,
-      () => apiFetch(`${API}/anime/gogoanime/info/${id}`)
+      () => apiFetch(`${API}/gogoanime/info/${id}`)
     );
 
     res.json({
@@ -150,7 +140,7 @@ exports.getEpisodes = async (req, res) => {
   }
 };
 
-/* ───────────────── SOURCES ───────────────── */
+/* ───────── SOURCES ───────── */
 
 exports.getSources = async (req, res) => {
   try {
@@ -165,7 +155,7 @@ exports.getSources = async (req, res) => {
     const data = await cachedFetch(
       `sources:${episodeId}`,
       TTL.SOURCES,
-      () => apiFetch(`${API}/anime/gogoanime/watch/${episodeId}`)
+      () => apiFetch(`${API}/gogoanime/watch/${episodeId}`)
     );
 
     res.json(data);
@@ -174,7 +164,7 @@ exports.getSources = async (req, res) => {
   }
 };
 
-/* ───────────────── CATEGORY HELPERS ───────────────── */
+/* ───────── CATEGORY HELPER ───────── */
 
 async function browseSearch(res, cacheKey, keyword, page = 1) {
   try {
@@ -183,7 +173,7 @@ async function browseSearch(res, cacheKey, keyword, page = 1) {
       TTL.BROWSE,
       () =>
         apiFetch(
-          `${API}/anime/gogoanime/${encodeURIComponent(keyword)}?page=${page}`
+          `${API}/gogoanime/${encodeURIComponent(keyword)}?page=${page}`
         )
     );
 
@@ -201,30 +191,70 @@ async function browseSearch(res, cacheKey, keyword, page = 1) {
 }
 
 exports.getTopAiring = (req, res) =>
-  browseSearch(res, `top:${req.query.page || 1}`, 'top-airing', req.query.page || 1);
+  browseSearch(
+    res,
+    `top:${req.query.page || 1}`,
+    'top-airing',
+    req.query.page || 1
+  );
 
 exports.getMostPopular = (req, res) =>
-  browseSearch(res, `popular:${req.query.page || 1}`, 'popular', req.query.page || 1);
+  browseSearch(
+    res,
+    `popular:${req.query.page || 1}`,
+    'popular',
+    req.query.page || 1
+  );
 
 exports.getMostFavorite = (req, res) =>
-  browseSearch(res, `favorite:${req.query.page || 1}`, 'favorite', req.query.page || 1);
+  browseSearch(
+    res,
+    `favorite:${req.query.page || 1}`,
+    'favorite',
+    req.query.page || 1
+  );
 
 exports.getMovies = (req, res) =>
-  browseSearch(res, `movies:${req.query.page || 1}`, 'movie', req.query.page || 1);
+  browseSearch(
+    res,
+    `movies:${req.query.page || 1}`,
+    'movie',
+    req.query.page || 1
+  );
 
 exports.getTvSeries = (req, res) =>
-  browseSearch(res, `tv:${req.query.page || 1}`, 'tv', req.query.page || 1);
+  browseSearch(
+    res,
+    `tv:${req.query.page || 1}`,
+    'tv',
+    req.query.page || 1
+  );
 
 exports.getNewSeason = (req, res) =>
-  browseSearch(res, `new:${req.query.page || 1}`, 'new-season', req.query.page || 1);
+  browseSearch(
+    res,
+    `new:${req.query.page || 1}`,
+    'new-season',
+    req.query.page || 1
+  );
 
 exports.getCompleted = (req, res) =>
-  browseSearch(res, `completed:${req.query.page || 1}`, 'completed', req.query.page || 1);
+  browseSearch(
+    res,
+    `completed:${req.query.page || 1}`,
+    'completed',
+    req.query.page || 1
+  );
 
 exports.getOngoing = (req, res) =>
-  browseSearch(res, `ongoing:${req.query.page || 1}`, 'ongoing', req.query.page || 1);
+  browseSearch(
+    res,
+    `ongoing:${req.query.page || 1}`,
+    'ongoing',
+    req.query.page || 1
+  );
 
-/* ───────────────── STATS ───────────────── */
+/* ───────── STATS ───────── */
 
 exports.getStats = async (req, res) => {
   try {
@@ -241,9 +271,7 @@ exports.getStats = async (req, res) => {
       }
     );
   } catch (err) {
-    res.status(500).json({
-      error: err.message
-    });
+    res.status(500).json({ error: err.message });
   }
 };
 
@@ -268,9 +296,7 @@ exports.incrementView = async (req, res) => {
 
     res.json(stats);
   } catch (err) {
-    res.status(500).json({
-      error: err.message
-    });
+    res.status(500).json({ error: err.message });
   }
 };
 
@@ -308,13 +334,11 @@ exports.setReaction = async (req, res) => {
 
     res.json(stats);
   } catch (err) {
-    res.status(500).json({
-      error: err.message
-    });
+    res.status(500).json({ error: err.message });
   }
 };
 
-/* ───────────────── CACHE ───────────────── */
+/* ───────── CACHE ───────── */
 
 exports.getCacheStats = (req, res) => {
   const { cache } = require('../cache');
