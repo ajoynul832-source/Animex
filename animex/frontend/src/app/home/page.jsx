@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { animeApi } from '@/lib/api';
 import HeroSlider from '@/components/anime/HeroSlider';
+import AnimeRow from '@/components/anime/AnimeRow';
 
 export default function HomePage() {
   const [home, setHome] = useState(null);
@@ -26,27 +27,12 @@ export default function HomePage() {
         loading={loading}
       />
 
-      <div
-        style={{
-          padding: 30,
-          color: 'white'
-        }}
-      >
-        <h2>Latest Episodes</h2>
-
-        {(home?.latestEpisodeAnimes || [])
-          .slice(0, 5)
-          .map((a, i) => (
-            <div
-              key={i}
-              style={{
-                marginBottom: 10
-              }}
-            >
-              {a.name}
-            </div>
-          ))}
-      </div>
+      <AnimeRow
+        title="Latest Episodes"
+        animes={home?.latestEpisodeAnimes || []}
+        loading={loading}
+        viewAllHref="/latest/subbed"
+      />
     </div>
   );
 }
