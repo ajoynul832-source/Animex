@@ -13,7 +13,7 @@ const res = await fetch(url, { timeout: 15000 });
 
 if (!res.ok) {
 throw Object.assign(
-new Error(Upstream API error ${res.status}),
+new Error(`Upstream API error ${res.status}`),
 { status: res.status }
 );
 }
