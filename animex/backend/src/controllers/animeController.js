@@ -2,7 +2,10 @@ const fetch = require('node-fetch');
 const PageView = require('../models/PageView');
 const { cachedFetch, TTL } = require('../cache');
 
-const API = process.env.ANIWATCH_API || 'https://api-consumet.vercel.app';
+/*
+Using stable anime source
+*/
+const API = process.env.ANIWATCH_API || 'https://consumet-api-production.up.railway.app';
 
 async function apiFetch(url) {
   const res = await fetch(url, { timeout: 15000 });
@@ -17,7 +20,7 @@ async function apiFetch(url) {
   return res.json();
 }
 
-/* ───────── HOME ───────── */
+/* ───────────────── HOME ───────────────── */
 
 exports.getHome = async (req, res) => {
   try {
@@ -33,7 +36,21 @@ exports.getHome = async (req, res) => {
   }
 };
 
-/* ───────── SEARCH ───────── */
+/* ───────────────── SCHEDULE ───────────────── */
+
+exports.getSchedule = async (req, res) => {
+  try {
+    res.json({
+      data: []
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: err.message
+    });
+  }
+};
+
+/* ───────────────── SEARCH ───────────────── */
 
 exports.searchAnime = async (req, res) => {
   try {
@@ -64,11 +81,13 @@ exports.searchAnime = async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(502).json({ error: err.message });
+    res.status(502).json({
+      error: err.message
+    });
   }
 };
 
-/* ───────── A-Z LIST ───────── */
+/* ───────────────── A-Z LIST ───────────────── */
 
 exports.getAzList = async (req, res) => {
   try {
@@ -96,11 +115,42 @@ exports.getAzList = async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(502).json({ error: err.message });
+    res.status(502).json({
+      error: err.message
+    });
   }
 };
 
-/* ───────── INFO ───────── */
+/* ───────────────── GENRE ───────────────── */
+
+exports.getByGenre = async (req, res) => {
+  try {
+    const { genre } = req.params;
+    const page = req.query.page || 1;
+
+    const data = await cachedFetch(
+      `genre:${genre}:${page}`,
+      TTL.BROWSE,
+      () =>
+        apiFetch(
+          `${API}/gogoanime/${encodeURIComponent(genre)}?page=${page}`
+        )
+    );
+
+    res.json({
+      data: {
+        animes: data?.results || [],
+        totalPages: data?.hasNextPage ? Number(page) + 1 : Number(page)
+      }
+    });
+  } catch (err) {
+    res.status(502).json({
+      error: err.message
+    });
+  }
+};
+
+/* ───────────────── INFO ───────────────── */
 
 exports.getAnimeInfo = async (req, res) => {
   try {
@@ -114,11 +164,13 @@ exports.getAnimeInfo = async (req, res) => {
 
     res.json(data);
   } catch (err) {
-    res.status(502).json({ error: err.message });
+    res.status(502).json({
+      error: err.message
+    });
   }
 };
 
-/* ───────── EPISODES ───────── */
+/* ───────────────── EPISODES ───────────────── */
 
 exports.getEpisodes = async (req, res) => {
   try {
@@ -136,11 +188,13 @@ exports.getEpisodes = async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(502).json({ error: err.message });
+    res.status(502).json({
+      error: err.message
+    });
   }
 };
 
-/* ───────── SOURCES ───────── */
+/* ───────────────── SOURCES ───────────────── */
 
 exports.getSources = async (req, res) => {
   try {
@@ -160,11 +214,13 @@ exports.getSources = async (req, res) => {
 
     res.json(data);
   } catch (err) {
-    res.status(502).json({ error: err.message });
+    res.status(502).json({
+      error: err.message
+    });
   }
 };
 
-/* ───────── CATEGORY HELPER ───────── */
+/* ───────────────── CATEGORY HELPER ───────────────── */
 
 async function browseSearch(res, cacheKey, keyword, page = 1) {
   try {
@@ -191,70 +247,30 @@ async function browseSearch(res, cacheKey, keyword, page = 1) {
 }
 
 exports.getTopAiring = (req, res) =>
-  browseSearch(
-    res,
-    `top:${req.query.page || 1}`,
-    'top-airing',
-    req.query.page || 1
-  );
+  browseSearch(res, `top:${req.query.page || 1}`, 'top-airing', req.query.page || 1);
 
 exports.getMostPopular = (req, res) =>
-  browseSearch(
-    res,
-    `popular:${req.query.page || 1}`,
-    'popular',
-    req.query.page || 1
-  );
+  browseSearch(res, `popular:${req.query.page || 1}`, 'popular', req.query.page || 1);
 
 exports.getMostFavorite = (req, res) =>
-  browseSearch(
-    res,
-    `favorite:${req.query.page || 1}`,
-    'favorite',
-    req.query.page || 1
-  );
+  browseSearch(res, `favorite:${req.query.page || 1}`, 'favorite', req.query.page || 1);
 
 exports.getMovies = (req, res) =>
-  browseSearch(
-    res,
-    `movies:${req.query.page || 1}`,
-    'movie',
-    req.query.page || 1
-  );
+  browseSearch(res, `movies:${req.query.page || 1}`, 'movie', req.query.page || 1);
 
 exports.getTvSeries = (req, res) =>
-  browseSearch(
-    res,
-    `tv:${req.query.page || 1}`,
-    'tv',
-    req.query.page || 1
-  );
+  browseSearch(res, `tv:${req.query.page || 1}`, 'tv', req.query.page || 1);
 
 exports.getNewSeason = (req, res) =>
-  browseSearch(
-    res,
-    `new:${req.query.page || 1}`,
-    'new-season',
-    req.query.page || 1
-  );
+  browseSearch(res, `new:${req.query.page || 1}`, 'new-season', req.query.page || 1);
 
 exports.getCompleted = (req, res) =>
-  browseSearch(
-    res,
-    `completed:${req.query.page || 1}`,
-    'completed',
-    req.query.page || 1
-  );
+  browseSearch(res, `completed:${req.query.page || 1}`, 'completed', req.query.page || 1);
 
 exports.getOngoing = (req, res) =>
-  browseSearch(
-    res,
-    `ongoing:${req.query.page || 1}`,
-    'ongoing',
-    req.query.page || 1
-  );
+  browseSearch(res, `ongoing:${req.query.page || 1}`, 'ongoing', req.query.page || 1);
 
-/* ───────── STATS ───────── */
+/* ───────────────── STATS ───────────────── */
 
 exports.getStats = async (req, res) => {
   try {
@@ -271,7 +287,9 @@ exports.getStats = async (req, res) => {
       }
     );
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message
+    });
   }
 };
 
@@ -296,7 +314,9 @@ exports.incrementView = async (req, res) => {
 
     res.json(stats);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message
+    });
   }
 };
 
@@ -334,11 +354,13 @@ exports.setReaction = async (req, res) => {
 
     res.json(stats);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      error: err.message
+    });
   }
 };
 
-/* ───────── CACHE ───────── */
+/* ───────────────── CACHE ───────────────── */
 
 exports.getCacheStats = (req, res) => {
   const { cache } = require('../cache');
