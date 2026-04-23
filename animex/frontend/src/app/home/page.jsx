@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { animeApi } from '@/lib/api';
+import HeroSlider from '@/components/anime/HeroSlider';
 
 export default function HomePage() {
   const [home, setHome] = useState(null);
@@ -21,38 +22,11 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div
-      style={{
-        padding: 40,
-        background: '#111',
-        color: 'white',
-        minHeight: '100vh'
-      }}
-    >
-      <h1>Frontend Test Page</h1>
-
-      <p style={{ marginTop: 20 }}>
-        Loading: {String(loading)}
-      </p>
-
-      <p style={{ marginTop: 20 }}>
-        Backend Response:
-      </p>
-
-      <pre
-        style={{
-          marginTop: 20,
-          fontSize: 12,
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-          background: '#1a1a1a',
-          padding: 20,
-          borderRadius: 8,
-          overflow: 'auto'
-        }}
-      >
-        {JSON.stringify(home, null, 2)}
-      </pre>
+    <div>
+      <HeroSlider
+        slides={home?.spotlightAnimes || []}
+        loading={loading}
+      />
     </div>
   );
 }
