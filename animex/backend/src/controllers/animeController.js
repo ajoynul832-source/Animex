@@ -3,9 +3,8 @@ const PageView = require('../models/PageView');
 const { cachedFetch, TTL } = require('../cache');
 
 /*
-REAL stable source:
+Stable professional source:
 Jikan API (MyAnimeList)
-No broken mirror APIs
 */
 const API = 'https://api.jikan.moe/v4';
 
@@ -38,11 +37,26 @@ exports.getHome = async (req, res) => {
       () => apiFetch(`${API}/seasons/now?page=1`)
     );
 
+    const topData = top?.data || [];
+    const seasonData = season?.data || [];
+
+    /*
+      Return old frontend structure
+      so existing frontend works
+    */
+
     res.json({
       data: {
-        topAiringAnimes: season?.data || [],
-        spotlightAnimes: top?.data?.slice(0, 10) || [],
-        trendingAnimes: top?.data?.slice(0, 20) || []
+        spotlightAnimes: topData.slice(0, 10),
+        trendingAnimes: topData.slice(0, 20),
+
+        latestEpisodeAnimes: seasonData.slice(0, 24),
+        topAiringAnimes: seasonData.slice(0, 24),
+
+        mostPopularAnimes: topData.slice(0, 24),
+        mostFavoriteAnimes: topData.slice(0, 24),
+
+        latestCompletedAnimes: topData.slice(0, 24)
       }
     });
   } catch (err) {
@@ -63,7 +77,9 @@ exports.getSchedule = async (req, res) => {
     );
 
     res.json({
-      data: data?.data || []
+      data: {
+        scheduledAnimes: data?.data || []
+      }
     });
   } catch (err) {
     res.status(502).json({
@@ -99,7 +115,8 @@ exports.searchAnime = async (req, res) => {
     res.json({
       data: {
         animes: data?.data || [],
-        totalPages: data?.pagination?.last_visible_page || 1
+        totalPages:
+          data?.pagination?.last_visible_page || 1
       }
     });
   } catch (err) {
@@ -113,7 +130,10 @@ exports.searchAnime = async (req, res) => {
 
 exports.getAzList = async (req, res) => {
   try {
-    const { letter = 'all', page = 1 } = req.query;
+    const {
+      letter = 'all',
+      page = 1
+    } = req.query;
 
     let url = `${API}/top/anime?page=${page}`;
 
@@ -130,7 +150,8 @@ exports.getAzList = async (req, res) => {
     res.json({
       data: {
         animes: data?.data || [],
-        totalPages: data?.pagination?.last_visible_page || 1
+        totalPages:
+          data?.pagination?.last_visible_page || 1
       }
     });
   } catch (err) {
@@ -152,14 +173,17 @@ exports.getByGenre = async (req, res) => {
       TTL.BROWSE,
       () =>
         apiFetch(
-          `${API}/anime?q=${encodeURIComponent(genre)}&page=${page}`
+          `${API}/anime?q=${encodeURIComponent(
+            genre
+          )}&page=${page}`
         )
     );
 
     res.json({
       data: {
         animes: data?.data || [],
-        totalPages: data?.pagination?.last_visible_page || 1
+        totalPages:
+          data?.pagination?.last_visible_page || 1
       }
     });
   } catch (err) {
@@ -219,14 +243,19 @@ exports.getSources = async (req, res) => {
   res.json({
     data: {
       sources: [],
-      note: 'Streaming sources removed from Jikan backend'
+      note:
+        'Streaming sources removed in Jikan backend'
     }
   });
 };
 
 /* ───────────────── CATEGORY HELPERS ───────────────── */
 
-async function browseTop(res, cacheKey, page = 1) {
+async function browseTop(
+  res,
+  cacheKey,
+  page = 1
+) {
   try {
     const data = await cachedFetch(
       cacheKey,
@@ -237,7 +266,8 @@ async function browseTop(res, cacheKey, page = 1) {
     res.json({
       data: {
         animes: data?.data || [],
-        totalPages: data?.pagination?.last_visible_page || 1
+        totalPages:
+          data?.pagination?.last_visible_page || 1
       }
     });
   } catch (err) {
@@ -248,28 +278,60 @@ async function browseTop(res, cacheKey, page = 1) {
 }
 
 exports.getTopAiring = (req, res) =>
-  browseTop(res, `top:${req.query.page || 1}`, req.query.page || 1);
+  browseTop(
+    res,
+    `top:${req.query.page || 1}`,
+    req.query.page || 1
+  );
 
 exports.getMostPopular = (req, res) =>
-  browseTop(res, `popular:${req.query.page || 1}`, req.query.page || 1);
+  browseTop(
+    res,
+    `popular:${req.query.page || 1}`,
+    req.query.page || 1
+  );
 
 exports.getMostFavorite = (req, res) =>
-  browseTop(res, `favorite:${req.query.page || 1}`, req.query.page || 1);
+  browseTop(
+    res,
+    `favorite:${req.query.page || 1}`,
+    req.query.page || 1
+  );
 
 exports.getMovies = (req, res) =>
-  browseTop(res, `movies:${req.query.page || 1}`, req.query.page || 1);
+  browseTop(
+    res,
+    `movies:${req.query.page || 1}`,
+    req.query.page || 1
+  );
 
 exports.getTvSeries = (req, res) =>
-  browseTop(res, `tv:${req.query.page || 1}`, req.query.page || 1);
+  browseTop(
+    res,
+    `tv:${req.query.page || 1}`,
+    req.query.page || 1
+  );
 
 exports.getNewSeason = (req, res) =>
-  browseTop(res, `new:${req.query.page || 1}`, req.query.page || 1);
+  browseTop(
+    res,
+    `new:${req.query.page || 1}`,
+    req.query.page || 1
+  );
 
 exports.getCompleted = (req, res) =>
-  browseTop(res, `completed:${req.query.page || 1}`, req.query.page || 1);
+  browseTop(
+    res,
+    `completed:${req.query.page || 1}`,
+    req.query.page || 1
+  );
 
 exports.getOngoing = (req, res) =>
-  browseTop(res, `ongoing:${req.query.page || 1}`, req.query.page || 1);
+  browseTop(
+    res,
+    `ongoing:${req.query.page || 1}`,
+    req.query.page || 1
+  );
 
 /* ───────────────── STATS ───────────────── */
 
@@ -299,19 +361,20 @@ exports.incrementView = async (req, res) => {
     const { pageId } = req.params;
     const { animeId } = req.body;
 
-    const stats = await PageView.findOneAndUpdate(
-      { pageId },
-      {
-        $inc: { totalViews: 1 },
-        $setOnInsert: {
-          animeId: animeId || pageId
+    const stats =
+      await PageView.findOneAndUpdate(
+        { pageId },
+        {
+          $inc: { totalViews: 1 },
+          $setOnInsert: {
+            animeId: animeId || pageId
+          }
+        },
+        {
+          upsert: true,
+          new: true
         }
-      },
-      {
-        upsert: true,
-        new: true
-      }
-    );
+      );
 
     res.json(stats);
   } catch (err) {
@@ -324,33 +387,43 @@ exports.incrementView = async (req, res) => {
 exports.setReaction = async (req, res) => {
   try {
     const { pageId } = req.params;
-    const { reaction, animeId } = req.body;
+    const {
+      reaction,
+      animeId
+    } = req.body;
 
-    if (!['like', 'dislike'].includes(reaction)) {
+    if (
+      !['like', 'dislike'].includes(
+        reaction
+      )
+    ) {
       return res.status(400).json({
-        error: 'reaction must be like or dislike'
+        error:
+          'reaction must be like or dislike'
       });
     }
 
-    const field = reaction === 'like'
-      ? 'likeCount'
-      : 'dislikeCount';
+    const field =
+      reaction === 'like'
+        ? 'likeCount'
+        : 'dislikeCount';
 
-    const stats = await PageView.findOneAndUpdate(
-      { pageId },
-      {
-        $inc: {
-          [field]: 1
+    const stats =
+      await PageView.findOneAndUpdate(
+        { pageId },
+        {
+          $inc: {
+            [field]: 1
+          },
+          $setOnInsert: {
+            animeId: animeId || pageId
+          }
         },
-        $setOnInsert: {
-          animeId: animeId || pageId
+        {
+          upsert: true,
+          new: true
         }
-      },
-      {
-        upsert: true,
-        new: true
-      }
-    );
+      );
 
     res.json(stats);
   } catch (err) {
