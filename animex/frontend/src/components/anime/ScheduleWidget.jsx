@@ -1,4 +1,5 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
@@ -6,6 +7,7 @@ import {
   Clock,
   ChevronRight
 } from 'lucide-react';
+
 import { animeApi } from '@/lib/api';
 
 const SHORT = [
@@ -22,9 +24,14 @@ export default function ScheduleWidget() {
   const today = new Date();
   const todayDow = today.getDay();
 
-  const [tab, setTab] = useState(todayDow);
-  const [data, setData] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [tab, setTab] =
+    useState(todayDow);
+
+  const [data, setData] =
+    useState({});
+
+  const [loading, setLoading] =
+    useState(true);
 
   const days = Array.from(
     { length: 7 },
@@ -32,7 +39,9 @@ export default function ScheduleWidget() {
       const d = new Date(today);
 
       d.setDate(
-        today.getDate() - todayDow + i
+        today.getDate() -
+          todayDow +
+          i
       );
 
       return {
@@ -44,7 +53,8 @@ export default function ScheduleWidget() {
         date: d
           .toISOString()
           .split('T')[0],
-        isToday: i === todayDow
+        isToday:
+          i === todayDow
       };
     }
   );
@@ -54,24 +64,40 @@ export default function ScheduleWidget() {
       const result = {};
 
       await Promise.all(
-        days.map(async (d) => {
-          try {
-            const res =
-              await animeApi.getSchedule(
-                d.date
-              );
+        days.map(
+          async (day) => {
+            try {
+              const res =
+                await animeApi.getSchedule(
+                  day.date
+                );
 
-            /*
-              Jikan-safe fallback
-            */
-            result[d.date] =
-              res?.data?.scheduledAnimes ||
-              res?.data ||
-              [];
-          } catch {
-            result[d.date] = [];
+              /*
+              Safe support:
+              - Jikan
+              - normalized backend
+              */
+
+              const items =
+                res?.data
+                  ?.scheduledAnimes ||
+                res?.data ||
+                [];
+
+              result[day.date] =
+                Array.isArray(
+                  items
+                )
+                  ? items.filter(
+                      Boolean
+                    )
+                  : [];
+            } catch {
+              result[day.date] =
+                [];
+            }
           }
-        })
+        )
       );
 
       setData(result);
@@ -80,7 +106,9 @@ export default function ScheduleWidget() {
   }, []);
 
   const items =
-    data[days[tab]?.date] || [];
+    data[
+      days[tab]?.date
+    ] || [];
 
   return (
     <div
@@ -90,18 +118,22 @@ export default function ScheduleWidget() {
         border:
           '1px solid var(--border)',
         borderRadius: 8,
-        overflow: 'hidden',
+        overflow:
+          'hidden',
         marginBottom: 0
       }}
     >
       {/* Header */}
       <div
         style={{
-          padding: '12px 16px',
+          padding:
+            '12px 16px',
           borderBottom:
             '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
+          display:
+            'flex',
+          alignItems:
+            'center',
           justifyContent:
             'space-between'
         }}
@@ -112,9 +144,12 @@ export default function ScheduleWidget() {
               'Rajdhani, sans-serif',
             fontSize: 16,
             fontWeight: 700,
-            color: 'var(--accent)',
-            display: 'flex',
-            alignItems: 'center',
+            color:
+              'var(--accent)',
+            display:
+              'flex',
+            alignItems:
+              'center',
             gap: 7
           }}
         >
@@ -126,11 +161,15 @@ export default function ScheduleWidget() {
           href="/schedule"
           style={{
             fontSize: 11,
-            color: 'var(--text-3)',
-            display: 'flex',
-            alignItems: 'center',
+            color:
+              'var(--text-3)',
+            display:
+              'flex',
+            alignItems:
+              'center',
             gap: 2,
-            textDecoration: 'none'
+            textDecoration:
+              'none'
           }}
         >
           Full
@@ -141,10 +180,12 @@ export default function ScheduleWidget() {
       {/* Tabs */}
       <div
         style={{
-          display: 'flex',
+          display:
+            'flex',
           borderBottom:
             '1px solid var(--border)',
-          overflowX: 'auto'
+          overflowX:
+            'auto'
         }}
       >
         {days.map((d) => (
@@ -155,7 +196,8 @@ export default function ScheduleWidget() {
             }
             style={{
               flexShrink: 0,
-              padding: '7px 10px',
+              padding:
+                '7px 10px',
               fontSize: 11,
               fontWeight: 700,
               textTransform:
@@ -164,14 +206,17 @@ export default function ScheduleWidget() {
                 tab === d.dow
                   ? 'var(--accent)'
                   : 'var(--text-3)',
-              background: 'none',
-              border: 'none',
+              background:
+                'none',
+              border:
+                'none',
               borderBottom: `2px solid ${
                 tab === d.dow
                   ? 'var(--accent)'
                   : 'transparent'
               }`,
-              cursor: 'pointer'
+              cursor:
+                'pointer'
             }}
           >
             {d.label}
@@ -183,164 +228,222 @@ export default function ScheduleWidget() {
       <div
         style={{
           maxHeight: 340,
-          overflowY: 'auto'
+          overflowY:
+            'auto'
         }}
       >
         {loading ? (
           <div
             style={{
-              padding: '14px'
+              padding:
+                '14px'
             }}
           >
             Loading...
           </div>
-        ) : items.length === 0 ? (
+        ) : items.length ===
+          0 ? (
           <p
             style={{
-              padding: '18px 14px',
+              padding:
+                '18px 14px',
               fontSize: 12,
-              color: 'var(--text-3)',
-              textAlign: 'center'
+              color:
+                'var(--text-3)',
+              textAlign:
+                'center'
             }}
           >
             No schedule for{' '}
-            {days[tab]?.label}
+            {
+              days[tab]
+                ?.label
+            }
           </p>
         ) : (
           <ul
             style={{
-              listStyle: 'none',
+              listStyle:
+                'none',
               padding: 0,
               margin: 0
             }}
           >
             {items
               .slice(0, 12)
-              .map((anime, i) => {
-                const id =
-                  anime.mal_id ||
-                  anime.id;
+              .map(
+                (
+                  anime,
+                  i
+                ) => {
+                  const id =
+                    anime?.id ||
+                    anime?.mal_id ||
+                    anime?.animeId;
 
-                const name =
-                  anime.title ||
-                  anime.name ||
-                  'Unknown Anime';
+                  if (!id)
+                    return null;
 
-                const poster =
-                  anime.images?.jpg
-                    ?.image_url ||
-                  anime.poster ||
-                  '/no-poster.svg';
+                  const name =
+                    anime?.name ||
+                    anime?.title ||
+                    anime?.title_english ||
+                    anime?.animeName ||
+                    'Unknown Anime';
 
-                const score =
-                  anime.score ||
-                  anime.rating ||
-                  null;
+                  const poster =
+                    anime?.poster ||
+                    anime?.images
+                      ?.jpg
+                      ?.large_image_url ||
+                    anime?.images
+                      ?.jpg
+                      ?.image_url ||
+                    '/no-poster.svg';
 
-                return (
-                  <li
-                    key={id || i}
-                    style={{
-                      borderBottom:
-                        '1px solid var(--border)'
-                    }}
-                  >
-                    <Link
-                      href={`/anime/${id}`}
+                  const score =
+                    anime?.rating ||
+                    anime?.score ||
+                    null;
+
+                  const type =
+                    anime?.type ||
+                    '';
+
+                  return (
+                    <li
+                      key={
+                        id ||
+                        i
+                      }
                       style={{
-                        display:
-                          'flex',
-                        alignItems:
-                          'center',
-                        gap: 10,
-                        padding:
-                          '9px 14px',
-                        textDecoration:
-                          'none'
+                        borderBottom:
+                          '1px solid var(--border)'
                       }}
                     >
-                      <img
-                        src={poster}
-                        alt={name}
+                      <Link
+                        href={`/anime/${id}`}
                         style={{
-                          width: 36,
-                          minWidth: 36,
-                          height: 50,
-                          objectFit:
-                            'cover',
-                          borderRadius: 3
-                        }}
-                        loading="lazy"
-                        onError={(
-                          e
-                        ) =>
-                          (e.currentTarget.src =
-                            '/no-poster.svg')
-                        }
-                      />
-
-                      <div
-                        style={{
-                          flex: 1,
-                          minWidth: 0
+                          display:
+                            'flex',
+                          alignItems:
+                            'center',
+                          gap: 10,
+                          padding:
+                            '9px 14px',
+                          textDecoration:
+                            'none'
                         }}
                       >
-                        <p
+                        <img
+                          src={
+                            poster
+                          }
+                          alt={
+                            name
+                          }
                           style={{
-                            fontSize: 12,
-                            fontWeight: 500,
-                            color:
-                              'var(--text-2)',
-                            marginBottom: 4
+                            width: 36,
+                            minWidth: 36,
+                            height: 50,
+                            objectFit:
+                              'cover',
+                            borderRadius: 3
                           }}
-                        >
-                          {name}
-                        </p>
+                          loading="lazy"
+                          onError={(
+                            e
+                          ) => {
+                            e.currentTarget.src =
+                              '/no-poster.svg';
+                          }}
+                        />
 
                         <div
                           style={{
-                            display:
-                              'flex',
-                            alignItems:
-                              'center',
-                            gap: 6
+                            flex: 1,
+                            minWidth: 0
                           }}
                         >
-                          {score && (
-                            <span
-                              style={{
-                                fontSize: 10,
-                                color:
-                                  'var(--accent)',
-                                fontWeight: 700
-                              }}
-                            >
-                              Score{' '}
-                              {score}
-                            </span>
-                          )}
-
-                          <span
+                          <p
                             style={{
-                              fontSize: 10,
+                              fontSize: 12,
+                              fontWeight: 500,
                               color:
-                                'var(--text-3)',
+                                'var(--text-2)',
+                              marginBottom: 4
+                            }}
+                          >
+                            {
+                              name
+                            }
+                          </p>
+
+                          <div
+                            style={{
                               display:
                                 'flex',
                               alignItems:
                                 'center',
-                              gap: 3
+                              gap: 6,
+                              flexWrap:
+                                'wrap'
                             }}
                           >
-                            <Clock size={9} />
-                            Weekly
-                          </span>
+                            {type && (
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  color:
+                                    'var(--text-3)'
+                                }}
+                              >
+                                {
+                                  type
+                                }
+                              </span>
+                            )}
+
+                            {score && (
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  color:
+                                    'var(--accent)',
+                                  fontWeight: 700
+                                }}
+                              >
+                                ★{' '}
+                                {Number(
+                                  score
+                                ).toFixed(
+                                  1
+                                )}
+                              </span>
+                            )}
+
+                            <span
+                              style={{
+                                fontSize: 10,
+                                color:
+                                  'var(--text-3)',
+                                display:
+                                  'flex',
+                                alignItems:
+                                  'center',
+                                gap: 3
+                              }}
+                            >
+                              <Clock size={9} />
+                              Weekly
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </Link>
-                  </li>
-                );
-              })}
+                      </Link>
+                    </li>
+                  );
+                }
+              )}
           </ul>
         )}
       </div>
