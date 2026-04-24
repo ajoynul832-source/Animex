@@ -26,19 +26,11 @@ const VideoPlayer = forwardRef(
     },
     ref
   ) {
-    const videoRef =
-      useRef(null);
-
-    const hlsRef =
-      useRef(null);
+    const videoRef = useRef(null);
+    const hlsRef = useRef(null);
 
     const [state, setState] =
       useState('loading');
-    /*
-    loading
-    ready
-    error
-    */
 
     const [errorMessage,
       setErrorMessage] =
@@ -51,25 +43,57 @@ const VideoPlayer = forwardRef(
     const [currentQuality,
       setCurrentQuality] =
       useState(-1);
-    /*
-    -1 = auto
-    */
 
     /*
-    Expose native video element
-    to parent page
+    IMPORTANT FIX:
+    expose helper methods
+    for real resume + auto-next
     */
     useImperativeHandle(
       ref,
-      () =>
-        videoRef.current
+      () => ({
+        get currentTime() {
+          return (
+            videoRef.current
+              ?.currentTime || 0
+          );
+        },
+
+        get duration() {
+          return (
+            videoRef.current
+              ?.duration || 0
+          );
+        },
+
+        play: () => {
+          return videoRef.current
+            ?.play?.();
+        },
+
+        pause: () => {
+          return videoRef.current
+            ?.pause?.();
+        },
+
+        seekTo: (time) => {
+          if (
+            videoRef.current
+          ) {
+            videoRef.current.currentTime =
+              Number(time) || 0;
+          }
+        },
+
+        get element() {
+          return videoRef.current;
+        }
+      })
     );
 
     useEffect(() => {
       if (!src) {
-        setState(
-          'loading'
-        );
+        setState('loading');
         return;
       }
 
@@ -95,7 +119,7 @@ const VideoPlayer = forwardRef(
             );
 
             /*
-            destroy previous HLS
+            destroy old HLS
             */
             if (
               hlsRef.current
@@ -112,7 +136,7 @@ const VideoPlayer = forwardRef(
               return;
 
             /*
-            clear previous source
+            reset old source
             */
             video.pause();
             video.removeAttribute(
@@ -120,18 +144,24 @@ const VideoPlayer = forwardRef(
             );
             video.load();
 
-            /*
-            .m3u8 support
-            */
             const isM3U8 =
-src.includes('.m3u8') ||
-src.includes('mux.dev') ||
-src.includes('m3u') ||
-src.includes('.m3u');
+              src.includes(
+                '.m3u8'
+              ) ||
+              src.includes(
+                'mux.dev'
+              ) ||
+              src.includes(
+                'm3u'
+              ) ||
+              src.includes(
+                '.m3u'
+              );
 
-            if (
-              isM3U8
-            ) {
+            /*
+            HLS stream
+            */
+            if (isM3U8) {
               const Hls =
                 (
                   await import(
@@ -143,13 +173,18 @@ src.includes('.m3u');
                 Hls.isSupported()
               ) {
                 const hls =
-new Hls({
-startLevel: -1,
-enableWorker: true,
-lowLatencyMode: false,
-maxBufferLength: 60,
-backBufferLength: 90
-});
+                  new Hls({
+                    startLevel:
+                      -1,
+                    enableWorker:
+                      true,
+                    lowLatencyMode:
+                      false,
+                    maxBufferLength:
+                      60,
+                    backBufferLength:
+                      90
+                  });
 
                 hls.loadSource(
                   src
@@ -283,7 +318,7 @@ backBufferLength: 90
             }
 
             /*
-            Normal mp4 fallback
+            MP4 fallback
             */
             video.src = src;
 
@@ -353,8 +388,7 @@ backBufferLength: 90
         style={{
           position:
             'relative',
-          width:
-            '100%',
+          width: '100%',
           height:
             '100%',
           minHeight:
@@ -474,12 +508,11 @@ backBufferLength: 90
                 .duration
             )
           }
-          onEnded={
-            onEnded
-          }
+          onEnded={() => {
+            onEnded?.();
+          }}
           style={{
-            width:
-              '100%',
+            width: '100%',
             height:
               '100%',
             display:
@@ -516,7 +549,7 @@ backBufferLength: 90
           )}
         </video>
 
-        {/* Quality selector */}
+        {/* Quality */}
         {state ===
           'ready' &&
           qualities.length >
