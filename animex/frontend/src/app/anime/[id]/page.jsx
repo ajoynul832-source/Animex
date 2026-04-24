@@ -519,94 +519,142 @@ Array.isArray(characterData)
           </div>
         )}
 
-        {/* Characters */}
-        {tab === 'characters' && (
-          <div className="film-grid">
-            {characters.length > 0 ? (
-              characters.map((c, i) => (
+{/* Characters */}
+{tab === 'characters' && (
+  <div className="film-grid">
+    {characters.length > 0 ? (
+      characters.map((c, i) => {
+        const charData =
+          c?.character ||
+          c;
+
+        const image =
+          charData?.images?.jpg?.image_url ||
+          charData?.image ||
+          '/no-poster.svg';
+
+        const name =
+          charData?.name ||
+          c?.name ||
+          'Unknown Character';
+
+        const role =
+          c?.role ||
+          c?.type ||
+          'Character';
+
+        const voiceActor =
+          c?.voiceActors?.[0]?.name ||
+          c?.voice_actors?.[0]?.person?.name ||
+          '';
+
+        return (
+          <div
+            key={i}
+            className="anif-block"
+            style={{ padding: 12 }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                gap: 12,
+                alignItems: 'center'
+              }}
+            >
+              <img
+                src={image}
+                alt={name}
+                style={{
+                  width: 60,
+                  height: 80,
+                  objectFit: 'cover',
+                  borderRadius: 6
+                }}
+                onError={(e) => {
+                  e.currentTarget.src =
+                    '/no-poster.svg';
+                }}
+              />
+
+              <div>
                 <div
-                  key={i}
-                  className="anif-block"
-                  style={{ padding: 12 }}
+                  style={{
+                    fontWeight: 700
+                  }}
                 >
+                  {name}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--accent)'
+                  }}
+                >
+                  {role}
+                </div>
+
+                {voiceActor && (
                   <div
                     style={{
-                      display: 'flex',
-                      gap: 12,
-                      alignItems: 'center'
+                      fontSize: 12,
+                      color: 'var(--text-3)'
                     }}
                   >
-                    <img
-                      src={
-                        c?.character?.images?.jpg
-                          ?.image_url ||
-                        '/no-poster.svg'
-                      }
-                      alt={
-                        c?.character?.name ||
-                        'Character'
-                      }
-                      style={{
-                        width: 60,
-                        height: 80,
-                        objectFit: 'cover',
-                        borderRadius: 6
-                      }}
-                    />
-
-                    <div>
-                      <div
-                        style={{
-                          fontWeight: 600
-                        }}
-                      >
-                        {c?.character?.name ||
-                          'Unknown Character'}
-                      </div>
-
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color:
-                            'var(--text-3)'
-                        }}
-                      >
-                        {c?.role ||
-                          'Character'}
-                      </div>
-                    </div>
+                    {voiceActor}
                   </div>
-                </div>
-              ))
-            ) : (
-              <p>No characters available.</p>
-            )}
+                )}
+              </div>
+            </div>
           </div>
-        )}
+        );
+      })
+    ) : (
+      <p>No characters available.</p>
+    )}
+  </div>
+)}
 
-        {/* Related */}
-        {tab === 'related' && (
-          <div className="film-grid">
-            {related.length > 0 ? (
-              related.map((r, i) => (
-                <AnimeCard
-                  key={i}
-                  anime={{
-                    id:
-                      r?.entry?.mal_id,
-                    name:
-                      r?.entry?.name,
-                    poster:
-                      r?.entry?.images?.jpg
-                        ?.image_url
-                  }}
-                />
-              ))
-            ) : (
-              <p>No related anime.</p>
-            )}
-          </div>
-        )}
+{/* Related */}
+{tab === 'related' && (
+  <div className="film-grid">
+    {related.length > 0 ? (
+      related.map((r, i) => {
+        const entry =
+          r?.entry ||
+          r;
+
+        return (
+          <AnimeCard
+            key={i}
+            anime={{
+              id:
+                entry?.mal_id ||
+                entry?.id,
+              name:
+                entry?.name ||
+                entry?.title,
+              poster:
+                entry?.images?.jpg?.large_image_url ||
+                entry?.images?.jpg?.image_url ||
+                entry?.poster ||
+                '/no-poster.svg',
+              type:
+                entry?.type ||
+                r?.relation ||
+                '',
+              rating:
+                entry?.score ||
+                null
+            }}
+          />
+        );
+      })
+    ) : (
+      <p>No related anime.</p>
+    )}
+  </div>
+)}
       </div>
     </div>
   );
