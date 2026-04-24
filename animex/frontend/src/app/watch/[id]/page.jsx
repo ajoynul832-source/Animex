@@ -36,6 +36,7 @@ import EpisodePanel from '@/components/player/EpisodePanel';
 import AnimeRow from '@/components/anime/AnimeRow';
 
 import ContinueWatchingModal from '@/components/watch/ContinueWatchingModal';
+import AutoNextModal from '@/components/watch/AutoNextModal';
 
 const SERVERS = [
   'hd-1',
@@ -69,11 +70,7 @@ export default function WatchPage() {
       'hd-1'
     );
 
-  const [autoNext] =
-    useLocalStorage(
-      'animex_auto_next',
-      true
-    );
+  
 
   const videoRef =
     useRef(null);
@@ -85,6 +82,17 @@ const [savedProgress,
 const [showResumeModal,
   setShowResumeModal] =
   useState(false);
+  const [autoNextEnabled,
+  setAutoNextEnabled] =
+  useState(true);
+
+const [showAutoNext,
+  setShowAutoNext] =
+  useState(false);
+
+const [countdown,
+  setCountdown] =
+  useState(5);
   const epId =
     searchParams.get('ep');
 
@@ -198,6 +206,33 @@ useEffect(() => {
 
   loadProgress();
 }, [id]);
+
+useEffect(() => {
+  async function loadPreference() {
+    if (!user) return;
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/user/profile`,
+        {
+          credentials: 'include'
+        }
+      );
+
+      const data =
+        await res.json();
+
+      setAutoNextEnabled(
+        data?.user?.preferences
+          ?.autoNext ?? true
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  loadPreference();
+}, [user]);
 
   /*
   Load anime + episodes
@@ -378,13 +413,15 @@ useEffect(() => {
                 'application/json'
             },
             credentials: 'include',
-            body: JSON.stringify({
-              animeId: id,
-              episodeNumber:
-                currentEp.number,
-              currentTime: 300,
-              duration: 1400
-            })
+           body: JSON.stringify({
+animeId: id,
+episodeNumber:
+currentEp.number,
+currentTime:
+videoRef.current?.currentTime || 0,
+duration:
+videoRef.current?.duration || 0
+})
           }
         );
       } catch (err) {
@@ -462,29 +499,76 @@ useEffect(() => {
       ]
     );
 
-  const handleEnded =
-    useCallback(
-      () => {
-        if (
-          autoNext &&
-          episodes[
-            currentIndex + 1
-          ]
-        ) {
-          goEpisode(
-            episodes[
-              currentIndex + 1
-            ]
-          );
-        }
-      },
-      [
-        autoNext,
-        episodes,
-        currentIndex,
-        goEpisode
-      ]
+const handleEnded =
+useCallback(() => {
+if (
+!navigation.next ||
+!autoNextEnabled
+) {
+return;
+}
+
+setShowAutoNext(true);
+setCountdown(5);
+}, [
+navigation.next,
+autoNextEnabled
+]);
+useEffect(() => {
+  if (
+    !showAutoNext ||
+    !navigation.next
+  ) {
+    return;
+  }
+
+  if (countdown === 0) {
+    router.push(
+      `/watch/${id}?ep=${navigation.next}&server=${category}`
     );
+    return;
+  }
+
+  const timer =
+    setTimeout(() => {
+      setCountdown((prev) =>
+        prev - 1
+      );
+    }, 1000);
+
+  return () =>
+    clearTimeout(timer);
+}, [
+  showAutoNext,
+  countdown,
+  navigation.next,
+  id,
+  router,
+  category
+]);
+const updateAutoNext =
+  async (value) => {
+    setAutoNextEnabled(value);
+
+    try {
+      await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/user/preferences/auto-next`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type':
+              'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            autoNext: value
+          })
+        }
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useKeyboard({
     ArrowLeft: () =>
@@ -555,6 +639,25 @@ useEffect(() => {
       }}
     />
 )}
+
+{showAutoNext &&
+  navigation.next && (
+    <AutoNextModal
+      nextEpisode={
+        navigation.next
+      }
+      countdown={countdown}
+      onCancel={() =>
+        setShowAutoNext(false)
+      }
+      onPlayNext={() =>
+        router.push(
+          `/watch/${id}?ep=${navigation.next}&server=${category}`
+        )
+      }
+    />
+)}
+  
 
       {/* Player */}
       <div
@@ -681,6 +784,24 @@ useEffect(() => {
       RAW
     </option>
   </select>
+  <label
+  style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8
+  }}
+>
+  <input
+    type="checkbox"
+    checked={autoNextEnabled}
+    onChange={(e) =>
+      updateAutoNext(
+        e.target.checked
+      )
+    }
+  />
+  Auto Next
+</label>
 </div>
 
 {/* Title */}
