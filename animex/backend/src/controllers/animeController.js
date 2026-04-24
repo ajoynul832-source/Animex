@@ -362,32 +362,60 @@ for detail/watch pages
 */
 
 exports.getAnimeInfo = async (
-  req,
-  res
+req,
+res
 ) => {
-  try {
-    const { id } =
-      req.params;
+try {
+const { id } =
+req.params;
 
-    const data =
-      await cachedFetch(
-        `info:${id}`,
-        TTL.ANIME_INFO,
-        () =>
-          apiFetch(
-            `${API}/anime/${id}/full`
-          )
-      );
+const [
+infoRes,
+charRes
+] = await Promise.all([
+cachedFetch(
+`info:${id}`,
+TTL.ANIME_INFO,
+() =>
+apiFetch(
+`${API}/anime/${id}/full`
+)
+),
 
-    res.json({
-      data:
-        data?.data || null
-    });
-  } catch (err) {
-    res.status(502).json({
-      error: err.message
-    });
-  }
+cachedFetch(
+`characters:${id}`,
+TTL.ANIME_INFO,
+() =>
+apiFetch(
+`${API}/anime/${id}/characters`
+)
+)
+]);
+
+const animeData =
+infoRes?.data || {};
+
+animeData.characters =
+Array.isArray(
+charRes?.data
+)
+? charRes.data
+: [];
+
+animeData.relations =
+animeData?.relations ||
+animeData?.related ||
+animeData?.recommendations ||
+[];
+
+res.json({
+data: animeData
+});
+} catch (err) {
+res.status(502).json({
+error: err.message
+});
+}
 };
 
 /*
