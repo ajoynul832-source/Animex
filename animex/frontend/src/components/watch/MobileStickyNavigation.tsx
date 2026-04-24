@@ -1,37 +1,80 @@
 'use client';
 
-interface Props {
-  previous: number | null;
-  current: number;
-  next: number | null;
-  onNavigate: (episode: number) => void;
-}
-
 export default function MobileStickyNavigation({
   previous,
   current,
   next,
-  onNavigate,
-}: Props) {
+  onNavigate
+}) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-black/95 backdrop-blur-md p-3 md:hidden">
-      <div className="flex items-center justify-between gap-3">
+    <div
+      className="mobile-sticky-nav"
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 50,
+        padding: '12px',
+        borderTop: '1px solid var(--border)',
+        background: 'rgba(10,10,10,0.95)',
+        backdropFilter: 'blur(14px)',
+        display: 'flex',
+        justifyContent: 'center'
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 900,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12
+        }}
+      >
         <button
           disabled={!previous}
-          onClick={() => previous && onNavigate(previous)}
-          className="px-4 py-2 rounded-xl border disabled:opacity-50"
+          onClick={() =>
+            previous &&
+            onNavigate(previous)
+          }
+          style={{
+            padding: '10px 16px',
+            borderRadius: 12,
+            border: '1px solid var(--border)',
+            background: 'var(--bg-card)',
+            cursor: previous ? 'pointer' : 'not-allowed',
+            opacity: previous ? 1 : 0.5
+          }}
         >
           Prev
         </button>
 
-        <div className="font-semibold text-sm">
+        <div
+          style={{
+            fontWeight: 600,
+            fontSize: 14,
+            color: 'var(--text-1)'
+          }}
+        >
           Episode {current}
         </div>
 
         <button
           disabled={!next}
-          onClick={() => next && onNavigate(next)}
-          className="px-4 py-2 rounded-xl border disabled:opacity-50"
+          onClick={() =>
+            next &&
+            onNavigate(next)
+          }
+          style={{
+            padding: '10px 16px',
+            borderRadius: 12,
+            border: '1px solid var(--border)',
+            background: 'var(--bg-card)',
+            cursor: next ? 'pointer' : 'not-allowed',
+            opacity: next ? 1 : 0.5
+          }}
         >
           Next
         </button>
