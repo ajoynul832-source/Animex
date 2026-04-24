@@ -127,3 +127,34 @@ exports.checkWatchlist = async (req, res) => {
     res.status(500).json({ error: 'Failed to check watchlist' });
   }
 };
+
+exports.updateAutoNextPreference = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { autoNext } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          'preferences.autoNext': autoNext
+        }
+      },
+      {
+        new: true
+      }
+    );
+
+    res.status(200).json({
+      message: 'Auto-next preference updated',
+      autoNext:
+        user?.preferences?.autoNext
+    });
+  } catch (error) {
+    res.status(500).json({
+      message:
+        'Failed to update auto-next preference',
+      error: error.message
+    });
+  }
+};
