@@ -1,7 +1,16 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import {
+  Suspense,
+  useEffect,
+  useState
+} from 'react';
+
+import {
+  useSearchParams,
+  useRouter
+} from 'next/navigation';
+
 import {
   Search,
   SlidersHorizontal,
@@ -10,150 +19,378 @@ import {
   X
 } from 'lucide-react';
 
-import { searchApi } from '@/lib/api';
-import AnimeCard, { AnimeCardSkeleton } from '@/components/anime/AnimeCard';
+import { animeApi } from '@/lib/api';
 
-const TYPES = ['', 'TV', 'Movie', 'OVA', 'ONA', 'Special', 'Music'];
-const STATUSES = ['', 'Airing', 'Complete', 'Upcoming'];
-const RATINGS = ['', 'G', 'PG', 'PG-13', 'R', 'R+', 'Rx'];
-const SEASONS = ['', 'Spring', 'Summer', 'Fall', 'Winter'];
+import AnimeCard, {
+  AnimeCardSkeleton
+} from '@/components/anime/AnimeCard';
+
+/*
+Jikan-safe filters
+Frontend keeps UI professional
+even if backend ignores some filters
+*/
+
+const TYPES = [
+  '',
+  'TV',
+  'Movie',
+  'OVA',
+  'ONA',
+  'Special',
+  'Music'
+];
+
+const STATUSES = [
+  '',
+  'Airing',
+  'Complete',
+  'Upcoming'
+];
+
+const RATINGS = [
+  '',
+  'G',
+  'PG',
+  'PG-13',
+  'R',
+  'R+',
+  'Rx'
+];
+
+const SEASONS = [
+  '',
+  'Spring',
+  'Summer',
+  'Fall',
+  'Winter'
+];
 
 const SORTS = [
   ['', 'Default'],
-  ['recently-added', 'Recently Added'],
-  ['recently-updated', 'Recently Updated'],
   ['score', 'Score'],
   ['name-az', 'Name A-Z'],
-  ['released-date', 'Release Date'],
-  ['most-watched', 'Most Watched']
+  ['released-date', 'Release Date']
 ];
 
 function SearchContent() {
-  const sp = useSearchParams();
-  const router = useRouter();
+  const sp =
+    useSearchParams();
 
-  const keyword = sp.get('keyword') || '';
-  const page = parseInt(sp.get('page') || '1');
+  const router =
+    useRouter();
 
-  const [results, setResults] = useState([]);
-  const [total, setTotal] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [query, setQuery] = useState(keyword);
-  const [showFilters, setShowFilters] = useState(false);
+  const keyword =
+    sp.get(
+      'keyword'
+    ) || '';
 
-  const [filters, setFilters] = useState({
-    type: '',
-    status: '',
-    rated: '',
-    season: '',
-    sort: ''
-  });
+  const page =
+    parseInt(
+      sp.get(
+        'page'
+      ) || '1'
+    );
 
-  useEffect(() => {
-    if (!keyword) return;
+  const [query,
+    setQuery] =
+    useState(
+      keyword
+    );
 
-    setLoading(true);
+  const [results,
+    setResults] =
+    useState([]);
 
-    const f = {};
-    Object.entries(filters).forEach(([k, v]) => {
-      if (v) f[k] = v;
-    });
+  const [total,
+    setTotal] =
+    useState(1);
 
-    searchApi.search(keyword, page, f)
-      .then((d) => {
-        setResults(d?.data?.animes || []);
-        setTotal(d?.data?.totalPages || 1);
-      })
-      .catch(() => setResults([]))
-      .finally(() => setLoading(false));
-  }, [keyword, page, filters]);
+  const [loading,
+    setLoading] =
+    useState(false);
 
-  const submit = (e) => {
-    e.preventDefault();
+  const [showFilters,
+    setShowFilters] =
+    useState(false);
 
-    const q = query.trim();
-    if (!q) return;
-
-    router.push(`/search?keyword=${encodeURIComponent(q)}&page=1`);
-  };
-
-  const goPage = (p) => {
-    router.push(`/search?keyword=${encodeURIComponent(keyword)}&page=${p}`);
-  };
-
-  const setFilter = (k, v) => {
-    setFilters((prev) => ({
-      ...prev,
-      [k]: v
-    }));
-  };
-
-  const resetFilters = () => {
-    setFilters({
+  const [filters,
+    setFilters] =
+    useState({
       type: '',
       status: '',
       rated: '',
       season: '',
       sort: ''
     });
-  };
 
-  const hasFilters = Object.values(filters).some(Boolean);
+  /*
+  Load search
+  */
+
+  useEffect(() => {
+    if (!keyword)
+      return;
+
+    setLoading(
+      true
+    );
+
+    animeApi
+      .searchAnime(
+        keyword,
+        page
+      )
+      .then(
+        (res) => {
+          let items =
+            res?.data
+              ?.animes ||
+            [];
+
+          /*
+          Optional frontend filters
+          because Jikan backend may ignore
+          advanced filters
+          */
+
+          if (
+            filters.type
+          ) {
+            items =
+              items.filter(
+                (
+                  a
+                ) =>
+                  a.type ===
+                  filters.type
+              );
+          }
+
+          if (
+            filters.sort ===
+            'score'
+          ) {
+            items =
+              [
+                ...items
+              ].sort(
+                (
+                  a,
+                  b
+                ) =>
+                  (b.score ||
+                    b.rating ||
+                    0) -
+                  (a.score ||
+                    a.rating ||
+                    0)
+              );
+          }
+
+          if (
+            filters.sort ===
+            'name-az'
+          ) {
+            items =
+              [
+                ...items
+              ].sort(
+                (
+                  a,
+                  b
+                ) =>
+                  (
+                    a.title ||
+                    a.name ||
+                    ''
+                  ).localeCompare(
+                    b.title ||
+                      b.name ||
+                      ''
+                  )
+              );
+          }
+
+          setResults(
+            items
+          );
+
+          setTotal(
+            res?.data
+              ?.totalPages ||
+              1
+          );
+        }
+      )
+      .catch(
+        () => {
+          setResults(
+            []
+          );
+          setTotal(
+            1
+          );
+        }
+      )
+      .finally(() => {
+        setLoading(
+          false
+        );
+      });
+  }, [
+    keyword,
+    page,
+    filters
+  ]);
+
+  const submit =
+    (e) => {
+      e.preventDefault();
+
+      const q =
+        query.trim();
+
+      if (!q)
+        return;
+
+      router.push(
+        `/search?keyword=${encodeURIComponent(
+          q
+        )}&page=1`
+      );
+    };
+
+  const goPage =
+    (p) => {
+      if (
+        p < 1 ||
+        p > total
+      )
+        return;
+
+      router.push(
+        `/search?keyword=${encodeURIComponent(
+          keyword
+        )}&page=${p}`
+      );
+    };
+
+  const setFilter =
+    (
+      key,
+      value
+    ) => {
+      setFilters(
+        (
+          prev
+        ) => ({
+          ...prev,
+          [key]:
+            value
+        })
+      );
+    };
+
+  const resetFilters =
+    () => {
+      setFilters({
+        type: '',
+        status: '',
+        rated: '',
+        season: '',
+        sort: ''
+      });
+    };
+
+  const hasFilters =
+    Object.values(
+      filters
+    ).some(
+      Boolean
+    );
 
   return (
     <div className="page-inner">
-
-      {/* Search bar */}
+      {/* Search Bar */}
       <form
-        onSubmit={submit}
+        onSubmit={
+          submit
+        }
         style={{
-          maxWidth: 600,
+          maxWidth: 640,
           marginBottom: 20,
-          position: 'relative'
+          position:
+            'relative'
         }}
       >
         <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          value={
+            query
+          }
+          onChange={(
+            e
+          ) =>
+            setQuery(
+              e.target
+                .value
+            )
+          }
           placeholder="Search anime..."
           style={{
-            width: '100%',
+            width:
+              '100%',
             height: 44,
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
+            background:
+              'var(--bg-card)',
+            border:
+              '1px solid var(--border)',
             borderRadius: 8,
-            color: 'var(--text-1)',
+            color:
+              'var(--text-1)',
             fontSize: 14,
-            padding: '0 90px 0 16px',
-            outline: 'none'
+            padding:
+              '0 90px 0 16px',
+            outline:
+              'none'
           }}
         />
 
         <div
           style={{
-            position: 'absolute',
+            position:
+              'absolute',
             right: 8,
             top: '50%',
-            transform: 'translateY(-50%)',
-            display: 'flex',
+            transform:
+              'translateY(-50%)',
+            display:
+              'flex',
             gap: 6
           }}
         >
           <button
             type="button"
-            onClick={() => setShowFilters((f) => !f)}
-            title="Filters"
+            onClick={() =>
+              setShowFilters(
+                (
+                  v
+                ) =>
+                  !v
+              )
+            }
             style={{
               width: 30,
               height: 30,
-              background: showFilters ? 'var(--accent-dim)' : 'none',
-              border: '1px solid var(--border)',
+              border:
+                '1px solid var(--border)',
               borderRadius: 6,
-              color: showFilters ? 'var(--accent)' : 'var(--text-3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer'
+              background:
+                showFilters
+                  ? 'var(--accent-dim)'
+                  : 'none',
+              cursor:
+                'pointer'
             }}
           >
             <SlidersHorizontal size={14} />
@@ -164,14 +401,13 @@ function SearchContent() {
             style={{
               width: 30,
               height: 30,
-              background: 'var(--accent)',
-              border: 'none',
+              border:
+                'none',
               borderRadius: 6,
-              color: '#111',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer'
+              background:
+                'var(--accent)',
+              cursor:
+                'pointer'
             }}
           >
             <Search size={14} />
@@ -179,99 +415,183 @@ function SearchContent() {
         </div>
       </form>
 
-      {/* Filters panel */}
+      {/* Filters */}
       {showFilters && (
-        <div className="search-filters animate-fade-in">
+        <div className="search-filters">
           <div
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
+              display:
+                'flex',
+              justifyContent:
+                'space-between',
+              alignItems:
+                'center',
               marginBottom: 12
             }}
           >
-            <span
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: 'var(--text-1)'
-              }}
-            >
-              Advanced Filters
-            </span>
+            <strong>
+              Advanced
+              Filters
+            </strong>
 
             {hasFilters && (
               <button
-                className="filter-reset"
-                onClick={resetFilters}
+                onClick={
+                  resetFilters
+                }
               >
-                <X size={13} /> Reset
+                <X size={13} />
+                Reset
               </button>
             )}
           </div>
 
           <div className="filter-grid">
             {[
-              ['Type', 'type', TYPES],
-              ['Status', 'status', STATUSES],
-              ['Rating', 'rated', RATINGS],
-              ['Season', 'season', SEASONS]
-            ].map(([label, key, opts]) => (
-              <div key={key}>
-                <label className="filter-label">{label}</label>
-
-                <select
-                  className="filter-select"
-                  value={filters[key]}
-                  onChange={(e) => setFilter(key, e.target.value)}
+              [
+                'Type',
+                'type',
+                TYPES
+              ],
+              [
+                'Status',
+                'status',
+                STATUSES
+              ],
+              [
+                'Rating',
+                'rated',
+                RATINGS
+              ],
+              [
+                'Season',
+                'season',
+                SEASONS
+              ]
+            ].map(
+              ([
+                label,
+                key,
+                options
+              ]) => (
+                <div
+                  key={
+                    key
+                  }
                 >
-                  {opts.map((o) => (
-                    <option key={o} value={o}>
-                      {o || `Any ${label}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))}
+                  <label>
+                    {
+                      label
+                    }
+                  </label>
+
+                  <select
+                    value={
+                      filters[
+                        key
+                      ]
+                    }
+                    onChange={(
+                      e
+                    ) =>
+                      setFilter(
+                        key,
+                        e
+                          .target
+                          .value
+                      )
+                    }
+                  >
+                    {options.map(
+                      (
+                        item
+                      ) => (
+                        <option
+                          key={
+                            item
+                          }
+                          value={
+                            item
+                          }
+                        >
+                          {item ||
+                            `Any ${label}`}
+                        </option>
+                      )
+                    )}
+                  </select>
+                </div>
+              )
+            )}
 
             <div>
-              <label className="filter-label">Sort By</label>
+              <label>
+                Sort
+              </label>
 
               <select
-                className="filter-select"
-                value={filters.sort}
-                onChange={(e) => setFilter('sort', e.target.value)}
+                value={
+                  filters.sort
+                }
+                onChange={(
+                  e
+                ) =>
+                  setFilter(
+                    'sort',
+                    e
+                      .target
+                      .value
+                  )
+                }
               >
-                {SORTS.map(([v, l]) => (
-                  <option key={v} value={v}>
-                    {l}
-                  </option>
-                ))}
+                {SORTS.map(
+                  ([
+                    v,
+                    l
+                  ]) => (
+                    <option
+                      key={
+                        v
+                      }
+                      value={
+                        v
+                      }
+                    >
+                      {l}
+                    </option>
+                  )
+                )}
               </select>
             </div>
           </div>
         </div>
       )}
 
+      {/* Result text */}
       {keyword && (
         <p
           style={{
-            fontSize: 13,
-            color: 'var(--text-3)',
             marginBottom: 18
           }}
         >
           Results for{' '}
-          <strong style={{ color: 'var(--accent)' }}>
-            "{keyword}"
+          <strong>
+            "
+            {
+              keyword
+            }
+            "
           </strong>
 
-          {!loading && <span> — {results.length} shown</span>}
-
-          {hasFilters && (
-            <span style={{ color: 'var(--info)' }}>
-              {' '} (filtered)
-            </span>
+          {!loading && (
+            <>
+              {' '}
+              —{' '}
+              {
+                results.length
+              }{' '}
+              shown
+            </>
           )}
         </p>
       )}
@@ -279,66 +599,118 @@ function SearchContent() {
       {/* Results */}
       <div
         className="film-grid film-grid-6"
-        style={{ marginBottom: 32 }}
+        style={{
+          marginBottom: 30
+        }}
       >
         {loading
-          ? Array.from({ length: 18 }).map((_, i) => (
-              <AnimeCardSkeleton key={i} />
-            ))
-          : results.map((a, i) => (
-              <AnimeCard
-                key={a?.id || i}
-                anime={a}
-              />
-            ))
-        }
+          ? Array.from(
+              {
+                length: 18
+              }
+            ).map(
+              (
+                _,
+                i
+              ) => (
+                <AnimeCardSkeleton
+                  key={
+                    i
+                  }
+                />
+              )
+            )
+          : results.map(
+              (
+                anime,
+                i
+              ) => (
+                <AnimeCard
+                  key={
+                    anime?.id ||
+                    anime?.mal_id ||
+                    i
+                  }
+                  anime={
+                    anime
+                  }
+                />
+              )
+            )}
       </div>
 
-      {!loading && !keyword && (
-        <div className="empty-state">
-          <Search size={52} className="empty-state-icon" />
-          <p className="empty-state-title">Search for anime</p>
-          <p className="empty-state-text">
-            Type a title, genre, or character name
-          </p>
-        </div>
-      )}
+      {/* Empty */}
+      {!loading &&
+        !keyword && (
+          <div>
+            Search for
+            anime
+          </div>
+        )}
 
-      {!loading && keyword && results.length === 0 && (
-        <div className="empty-state">
-          <Search size={52} className="empty-state-icon" />
-          <p className="empty-state-title">
-            No results for "{keyword}"
-          </p>
-          <p className="empty-state-text">
-            Try different keywords or clear filters
-          </p>
-        </div>
-      )}
+      {!loading &&
+        keyword &&
+        results.length ===
+          0 && (
+          <div>
+            No results
+            found
+          </div>
+        )}
 
       {/* Pagination */}
       {total > 1 && (
         <div className="pagination">
           <button
-            className="page-btn"
-            onClick={() => goPage(page - 1)}
-            disabled={page <= 1}
+            onClick={() =>
+              goPage(
+                page - 1
+              )
+            }
+            disabled={
+              page <= 1
+            }
           >
             <ChevronLeft size={13} />
           </button>
 
           {Array.from(
-            { length: Math.min(total, 7) },
-            (_, i) => {
-              const p = page <= 4 ? i + 1 : page - 3 + i;
+            {
+              length:
+                Math.min(
+                  total,
+                  7
+                )
+            },
+            (
+              _,
+              i
+            ) => {
+              const p =
+                page <=
+                4
+                  ? i + 1
+                  : page -
+                    3 +
+                    i;
 
-              if (p < 1 || p > total) return null;
+              if (
+                p < 1 ||
+                p >
+                  total
+              )
+                return null;
 
               return (
                 <button
-                  key={p}
-                  className={`page-btn ${p === page ? 'active' : ''}`}
-                  onClick={() => goPage(p)}
+                  key={
+                    p
+                  }
+                  onClick={() =>
+                    goPage(
+                      p
+                    )
+                  }
                 >
                   {p}
                 </button>
@@ -347,9 +719,15 @@ function SearchContent() {
           )}
 
           <button
-            className="page-btn"
-            onClick={() => goPage(page + 1)}
-            disabled={page >= total}
+            onClick={() =>
+              goPage(
+                page + 1
+              )
+            }
+            disabled={
+              page >=
+              total
+            }
           >
             <ChevronRight size={13} />
           </button>
@@ -361,7 +739,13 @@ function SearchContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense
+      fallback={
+        <div>
+          Loading...
+        </div>
+      }
+    >
       <SearchContent />
     </Suspense>
   );
