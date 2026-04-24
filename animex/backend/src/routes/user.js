@@ -20,5 +20,14 @@ router.get('/watchlist', userController.getWatchlist);
 router.post('/watchlist', userController.addToWatchlist);
 router.delete('/watchlist/:animeId', userController.removeFromWatchlist);
 router.get('/watchlist/check/:animeId', userController.checkWatchlist);
+// Watch progress
+router.post(
+  '/watch-progress',
+  userController.saveWatchProgress
+);
 
+router.get(
+  '/watch-progress/:animeId',
+  userController.getWatchProgress
+);
 module.exports = router;
