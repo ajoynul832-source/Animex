@@ -424,35 +424,51 @@ EPISODES
 ────────────────────────────────────────────
 */
 
-exports.getEpisodes = async (
-  req,
-  res
-) => {
-  try {
-    const { id } =
-      req.params;
+exports.getEpisodes = async (req, res) => {
+try {
+const { id } = req.params;
 
-    const data =
-      await cachedFetch(
-        `episodes:${id}`,
-        TTL.EPISODES,
-        () =>
-          apiFetch(
-            `${API}/anime/${id}/episodes`
-          )
-      );
+const data = await cachedFetch(
+`episodes:${id}`,
+TTL.EPISODES,
+() =>
+apiFetch(
+`${API}/anime/${id}/episodes`
+)
+);
 
-    res.json({
-      data: {
-        episodes:
-          data?.data || []
-      }
-    });
-  } catch (err) {
-    res.status(502).json({
-      error: err.message
-    });
-  }
+const episodes = (data?.data || []).map((ep, index) => ({
+number:
+ep.mal_id ||
+ep.episode_id ||
+ep.number ||
+index + 1,
+
+title:
+ep.title ||
+`Episode ${index + 1}`,
+
+episodeId:
+ep.mal_id ||
+ep.episode_id ||
+`ep-${index + 1}`,
+
+isFiller: false,
+
+thumbnail:
+ep.images?.jpg?.image_url ||
+''
+}));
+
+res.json({
+animeId: id,
+episodes
+});
+} catch (err) {
+res.status(502).json({
+error: err.message
+});
+}
 };
 
 /*
