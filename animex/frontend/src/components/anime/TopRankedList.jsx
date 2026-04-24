@@ -71,10 +71,16 @@ export default function TopRankedList({
               anime?.animeType ||
               '';
 
+            /*
+            SAFE episodes handling
+            prevents React error #31
+            */
             const episodes =
-              anime?.episodes?.sub ||
-              anime?.episodes ||
-              null;
+              anime?.episodes?.sub != null
+                ? anime.episodes.sub
+                : typeof anime?.episodes === 'number'
+                ? anime.episodes
+                : null;
 
             const score =
               anime?.rating ||
@@ -99,9 +105,7 @@ export default function TopRankedList({
                   src={poster}
                   alt={name}
                   loading="lazy"
-                  onError={(
-                    e
-                  ) => {
+                  onError={(e) => {
                     e.currentTarget.src =
                       '/no-poster.svg';
                   }}
@@ -122,7 +126,7 @@ export default function TopRankedList({
                       </span>
                     )}
 
-                    {episodes && (
+                    {episodes != null && (
                       <span
                         style={{
                           color:
@@ -130,14 +134,11 @@ export default function TopRankedList({
                           fontWeight: 700
                         }}
                       >
-                        EP{' '}
-                        {
-                          episodes
-                        }
+                        EP {episodes}
                       </span>
                     )}
 
-                    {!episodes &&
+                    {episodes == null &&
                       score && (
                         <span>
                           ★{' '}
