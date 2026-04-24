@@ -14,7 +14,7 @@ router.get('/info/:id', c.getAnimeInfo);
 Step 2
 Episode list system
 */
-router.get('/:id/episodes', c.getAnimeEpisodes);
+router.get('/:id/episodes', c.getEpisodes);
 
 /*
 Old episode route (keep this)
@@ -26,8 +26,8 @@ Step 3
 Next / Previous navigation
 */
 router.get(
-  '/:id/episode/:ep/navigation',
-  c.getEpisodeNavigation
+'/:id/episode/:ep/navigation',
+c.getEpisodeNavigation
 );
 
 router.get('/sources', c.getSources);
@@ -47,14 +47,14 @@ router.get('/az-list', c.getAzList);
 // Stats + reactions
 router.get('/stats/:pageId', c.getStats);
 router.post(
-  '/stats/:pageId/view',
-  optionalAuth,
-  c.incrementView
+'/stats/:pageId/view',
+optionalAuth,
+c.incrementView
 );
 router.post(
-  '/stats/:pageId/react',
-  optionalAuth,
-  c.setReaction
+'/stats/:pageId/react',
+optionalAuth,
+c.setReaction
 );
 
 // Cache management (internal)
