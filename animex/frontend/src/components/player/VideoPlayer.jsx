@@ -26,11 +26,8 @@ const VideoPlayer = forwardRef(
     },
     ref
   ) {
-    const videoRef =
-      useRef(null);
-
-    const hlsRef =
-      useRef(null);
+    const videoRef = useRef(null);
+    const hlsRef = useRef(null);
 
     const [state, setState] =
       useState('loading');
@@ -57,280 +54,229 @@ const VideoPlayer = forwardRef(
 
     /*
     Expose native video element
-    to parent page
     */
     useImperativeHandle(
       ref,
-      () =>
-        videoRef.current
+      () => videoRef.current
     );
 
     useEffect(() => {
+      let mounted = true;
+
+      /*
+      IMPORTANT FIX:
+      if no stream exists,
+      show proper error instead
+      of infinite loading / crash
+      */
       if (!src) {
-        setState(
-          'loading'
+        setState('error');
+        setErrorMessage(
+          'No stream source available. Try another server.'
         );
+        onError?.();
         return;
       }
 
-      let mounted = true;
+      const init = async () => {
+        try {
+          setState('loading');
+          setErrorMessage('');
+          setQualities([]);
+          setCurrentQuality(-1);
 
-      const init =
-        async () => {
-          try {
-            setState(
-              'loading'
+          /*
+          destroy previous HLS
+          */
+          if (hlsRef.current) {
+            hlsRef.current.destroy();
+            hlsRef.current = null;
+          }
+
+          const video =
+            videoRef.current;
+
+          if (!video) return;
+
+          /*
+          clear previous source
+          */
+          video.pause();
+          video.removeAttribute(
+            'src'
+          );
+          video.load();
+
+          /*
+          detect .m3u8
+          */
+          const isM3U8 =
+            src.includes(
+              '.m3u8'
             );
 
-            setErrorMessage(
-              ''
-            );
+          if (isM3U8) {
+            const Hls =
+              (
+                await import(
+                  'hls.js'
+                )
+              ).default;
 
-            setQualities(
-              []
-            );
-
-            setCurrentQuality(
-              -1
-            );
-
-            /*
-            destroy previous HLS
-            */
             if (
-              hlsRef.current
+              Hls.isSupported()
             ) {
-              hlsRef.current.destroy();
-              hlsRef.current =
-                null;
-            }
+              const hls =
+                new Hls({
+                  startLevel: -1,
+                  enableWorker: true,
+                  lowLatencyMode: true,
+                  maxBufferLength: 30
+                });
 
-            const video =
-              videoRef.current;
+              hls.loadSource(src);
+              hls.attachMedia(video);
 
-            if (!video)
-              return;
+              hls.on(
+                Hls.Events.MANIFEST_PARSED,
+                (_, data) => {
+                  if (!mounted)
+                    return;
 
-            /*
-            clear previous source
-            */
-            video.pause();
-            video.removeAttribute(
-              'src'
-            );
-            video.load();
+                  const levels =
+                    (
+                      data?.levels ||
+                      []
+                    ).map(
+                      (
+                        level,
+                        i
+                      ) => ({
+                        index: i,
+                        label:
+                          level?.height
+                            ? `${level.height}p`
+                            : `Level ${i + 1}`
+                      })
+                    );
 
-            /*
-            .m3u8 support
-            */
-            const isM3U8 =
-              src.includes(
-                '.m3u8'
+                  setQualities(
+                    levels
+                  );
+
+                  setState(
+                    'ready'
+                  );
+
+                  onReady?.();
+
+                  if (autoPlay) {
+                    video
+                      .play()
+                      .catch(
+                        () => {}
+                      );
+                  }
+                }
               );
 
-            if (
-              isM3U8
-            ) {
-              const Hls =
-                (
-                  await import(
-                    'hls.js'
-                  )
-                ).default;
-
-              if (
-                Hls.isSupported()
-              ) {
-                const hls =
-                  new Hls({
-                    startLevel:
-                      -1,
-                    enableWorker:
-                      true,
-                    lowLatencyMode:
-                      true,
-                    maxBufferLength:
-                      30
-                  });
-
-                hls.loadSource(
-                  src
-                );
-
-                hls.attachMedia(
-                  video
-                );
-
-                hls.on(
-                  Hls.Events.MANIFEST_PARSED,
-                  (
-                    _,
-                    data
-                  ) => {
-                    if (
-                      !mounted
-                    )
-                      return;
-
-                    const levels =
-                      (
-                        data?.levels ||
-                        []
-                      ).map(
-                        (
-                          level,
-                          i
-                        ) => ({
-                          index:
-                            i,
-                          label:
-                            level?.height
-                              ? `${level.height}p`
-                              : `Level ${i + 1}`
-                        })
-                      );
-
-                    setQualities(
-                      levels
-                    );
-
-                    setState(
-                      'ready'
-                    );
-
-                    onReady?.();
-
-                    if (
-                      autoPlay
-                    ) {
-                      video
-                        .play()
-                        .catch(
-                          () => {}
-                        );
-                    }
-                  }
-                );
-
-                hls.on(
-                  Hls.Events.LEVEL_SWITCHED,
-                  (
-                    _,
-                    data
-                  ) => {
-                    setCurrentQuality(
-                      data.level
-                    );
-                  }
-                );
-
-                hls.on(
-                  Hls.Events.ERROR,
-                  (
-                    _,
-                    data
-                  ) => {
-                    if (
-                      !data?.fatal
-                    )
-                      return;
-
-                    setState(
-                      'error'
-                    );
-
-                    setErrorMessage(
-                      'Stream unavailable. Try another server.'
-                    );
-
-                    onError?.();
-                  }
-                );
-
-                hlsRef.current =
-                  hls;
-
-                return;
-              }
-
-              /*
-              Safari native HLS
-              */
-              if (
-                video.canPlayType(
-                  'application/vnd.apple.mpegurl'
-                )
-              ) {
-                video.src =
-                  src;
-
-                setState(
-                  'ready'
-                );
-
-                onReady?.();
-
-                if (
-                  autoPlay
-                ) {
-                  video
-                    .play()
-                    .catch(
-                      () => {}
-                    );
+              hls.on(
+                Hls.Events.LEVEL_SWITCHED,
+                (_, data) => {
+                  setCurrentQuality(
+                    data.level
+                  );
                 }
+              );
 
-                return;
-              }
+              hls.on(
+                Hls.Events.ERROR,
+                (_, data) => {
+                  if (
+                    !data?.fatal
+                  )
+                    return;
+
+                  setState(
+                    'error'
+                  );
+
+                  setErrorMessage(
+                    'Stream unavailable. Try another server.'
+                  );
+
+                  onError?.();
+                }
+              );
+
+              hlsRef.current =
+                hls;
+
+              return;
             }
 
             /*
-            Normal mp4 fallback
+            Safari native HLS
             */
-            video.src = src;
-
-            setState(
-              'ready'
-            );
-
-            onReady?.();
-
             if (
-              autoPlay
+              video.canPlayType(
+                'application/vnd.apple.mpegurl'
+              )
             ) {
-              video
-                .play()
-                .catch(
-                  () => {}
-                );
+              video.src = src;
+
+              setState(
+                'ready'
+              );
+
+              onReady?.();
+
+              if (autoPlay) {
+                video
+                  .play()
+                  .catch(
+                    () => {}
+                  );
+              }
+
+              return;
             }
-          } catch (
-            err
-          ) {
-            setState(
-              'error'
-            );
-
-            setErrorMessage(
-              'Failed to load video stream.'
-            );
-
-            onError?.();
           }
-        };
+
+          /*
+          Normal MP4 fallback
+          */
+          video.src = src;
+
+          setState('ready');
+          onReady?.();
+
+          if (autoPlay) {
+            video
+              .play()
+              .catch(
+                () => {}
+              );
+          }
+        } catch (err) {
+          setState('error');
+
+          setErrorMessage(
+            'Failed to load video stream.'
+          );
+
+          onError?.();
+        }
+      };
 
       init();
 
       return () => {
-        mounted =
-          false;
+        mounted = false;
 
-        if (
-          hlsRef.current
-        ) {
+        if (hlsRef.current) {
           hlsRef.current.destroy();
-          hlsRef.current =
-            null;
+          hlsRef.current = null;
         }
       };
     }, [src]);
@@ -338,9 +284,7 @@ const VideoPlayer = forwardRef(
     const setLevel = (
       level
     ) => {
-      if (
-        hlsRef.current
-      ) {
+      if (hlsRef.current) {
         hlsRef.current.currentLevel =
           level;
       }
@@ -353,16 +297,11 @@ const VideoPlayer = forwardRef(
     return (
       <div
         style={{
-          position:
-            'relative',
-          width:
-            '100%',
-          height:
-            '100%',
-          minHeight:
-            420,
-          background:
-            '#000'
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          minHeight: 420,
+          background: '#000'
         }}
       >
         {/* Loading */}
@@ -404,8 +343,7 @@ const VideoPlayer = forwardRef(
                   'var(--text-3)'
               }}
             >
-              Loading
-              stream...
+              Loading stream...
             </span>
           </div>
         )}
@@ -451,18 +389,14 @@ const VideoPlayer = forwardRef(
                 maxWidth: 320
               }}
             >
-              {
-                errorMessage
-              }
+              {errorMessage}
             </p>
           </div>
         )}
 
         {/* Video */}
         <video
-          ref={
-            videoRef
-          }
+          ref={videoRef}
           controls
           playsInline
           preload="auto"
@@ -480,10 +414,8 @@ const VideoPlayer = forwardRef(
             onEnded
           }
           style={{
-            width:
-              '100%',
-            height:
-              '100%',
+            width: '100%',
+            height: '100%',
             display:
               state ===
               'ready'
@@ -552,8 +484,7 @@ const VideoPlayer = forwardRef(
                   border:
                     '1px solid rgba(255,255,255,0.2)',
                   borderRadius: 5,
-                  color:
-                    '#fff',
+                  color: '#fff',
                   fontSize: 11,
                   padding:
                     '4px 8px',
@@ -579,9 +510,7 @@ const VideoPlayer = forwardRef(
                         q.index
                       }
                     >
-                      {
-                        q.label
-                      }
+                      {q.label}
                     </option>
                   )
                 )}
