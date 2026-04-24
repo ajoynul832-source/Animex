@@ -122,6 +122,43 @@ export default function WatchPage() {
   const [sourceError,
     setSourceError] =
     useState(false);
+    const [navigation, setNavigation] =
+useState({
+previous: null,
+current: Number(epId) || 1,
+next: null
+});
+
+useEffect(() => {
+async function loadNavigation() {
+if (!id) return;
+
+const currentEpisode =
+Number(epId) || 1;
+
+try {
+const res = await fetch(
+`${process.env.NEXT_PUBLIC_API_URL}/api/anime/${id}/episode/${currentEpisode}/navigation`
+);
+
+const data =
+await res.json();
+
+setNavigation({
+previous:
+data.previous,
+current:
+data.current,
+next:
+data.next
+});
+} catch (err) {
+console.error(err);
+}
+}
+
+loadNavigation();
+}, [id, epId]);
 
   /*
   Load anime + episodes
@@ -483,157 +520,156 @@ export default function WatchPage() {
         )}
       </div>
 
-      {/* Controls */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 8,
-          flexWrap:
-            'wrap',
-          marginBottom: 16
-        }}
+{/* Controls */}
+<div
+  style={{
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+    flexWrap: 'wrap'
+  }}
+>
+  <button
+    disabled={!navigation.previous}
+    onClick={() =>
+      navigation.previous &&
+      router.push(
+        `/watch/${id}?ep=${navigation.previous}&server=${category}`
+      )
+    }
+  >
+    <ChevronLeft size={14} />
+    Previous Episode
+  </button>
+
+  <div>
+    Episode {navigation.current}
+  </div>
+
+  <button
+    disabled={!navigation.next}
+    onClick={() =>
+      navigation.next &&
+      router.push(
+        `/watch/${id}?ep=${navigation.next}&server=${category}`
+      )
+    }
+  >
+    Next Episode
+    <ChevronRight size={14} />
+  </button>
+
+  <select
+    value={server}
+    onChange={(e) =>
+      setServer(e.target.value)
+    }
+  >
+    {SERVERS.map((s) => (
+      <option
+        key={s}
+        value={s}
       >
-        <button
-          onClick={() =>
-            navigate(-1)
-          }
-        >
-          <ChevronLeft size={14} />
-          Prev
-        </button>
+        {s}
+      </option>
+    ))}
+  </select>
 
-        <button
-          onClick={() =>
-            navigate(1)
-          }
-        >
-          Next
-          <ChevronRight size={14} />
-        </button>
+  <select
+    value={category}
+    onChange={(e) =>
+      setCategory(e.target.value)
+    }
+  >
+    <option value="sub">
+      SUB
+    </option>
 
-        <select
-          value={server}
-          onChange={(e) =>
-            setServer(
-              e.target.value
-            )
-          }
-        >
-          {SERVERS.map(
-            (s) => (
-              <option
-                key={s}
-                value={s}
-              >
-                {s}
-              </option>
-            )
-          )}
-        </select>
+    <option value="dub">
+      DUB
+    </option>
 
-        <select
-          value={category}
-          onChange={(e) =>
-            setCategory(
-              e.target.value
-            )
-          }
-        >
-          <option value="sub">
-            SUB
-          </option>
+    <option value="raw">
+      RAW
+    </option>
+  </select>
+</div>
 
-          <option value="dub">
-            DUB
-          </option>
+{/* Title */}
+<div
+  style={{
+    marginBottom: 16
+  }}
+>
+  <h1>
+    {animeTitle}
+  </h1>
 
-          <option value="raw">
-            RAW
-          </option>
-        </select>
-      </div>
+  {currentEp?.title && (
+    <p>
+      Episode{' '}
+      {currentEp.number}
+      :{' '}
+      {currentEp.title}
+    </p>
+  )}
+</div>
 
-      {/* Title */}
-      <div
-        style={{
-          marginBottom: 16
-        }}
-      >
-        <h1>
-          {animeTitle}
-        </h1>
+{/* Details */}
+<Link
+  href={`/anime/${id}`}
+  style={{
+    display:
+      'inline-block',
+    marginBottom: 18
+  }}
+>
+  View Details
+</Link>
 
-        {currentEp?.title && (
-          <p>
-            Episode{' '}
-            {
-              currentEp.number
-            }
-            :{' '}
-            {
-              currentEp.title
-            }
-          </p>
-        )}
-      </div>
+{/* Episode list */}
+<EpisodePanel
+  episodes={episodes}
+  currentEpId={
+    currentEp?.mal_id ||
+    currentEp?.episode_id ||
+    currentEp?.number
+  }
+  animeId={id}
+  category={category}
+  onSelect={goEpisode}
+  watchedIds={
+    new Set()
+  }
+/>
 
-      {/* Details */}
-      <Link
-        href={`/anime/${id}`}
-        style={{
-          display:
-            'inline-block',
-          marginBottom: 18
-        }}
-      >
-        View Details
-      </Link>
-
-      {/* Episode list */}
-      <EpisodePanel
-        episodes={episodes}
-        currentEpId={
-          currentEp?.mal_id ||
-          currentEp?.episode_id ||
-          currentEp?.number
-        }
-        animeId={id}
-        category={category}
-        onSelect={goEpisode}
-        watchedIds={
-          new Set()
-        }
-      />
-
-      {/* Related */}
-      {related.length >
-        0 && (
-        <div
-          style={{
-            marginTop: 24
-          }}
-        >
-          <AnimeRow
-            title="You May Also Like"
-            animes={related.map(
-              (r) => ({
-                id:
-                  r?.entry
-                    ?.mal_id,
-                name:
-                  r?.entry
-                    ?.name,
-                poster:
-                  r?.entry
-                    ?.images
-                    ?.jpg
-                    ?.image_url
-              })
-            )}
-            loading={false}
-          />
-        </div>
+{/* Related */}
+{related.length > 0 && (
+  <div
+    style={{
+      marginTop: 24
+    }}
+  >
+    <AnimeRow
+      title="You May Also Like"
+      animes={related.map(
+        (r) => ({
+          id:
+            r?.entry
+              ?.mal_id,
+          name:
+            r?.entry
+              ?.name,
+          poster:
+            r?.entry
+              ?.images
+              ?.jpg
+              ?.image_url
+        })
       )}
-    </div>
-  );
-}
+      loading={false}
+    />
+  </div>
+)}
