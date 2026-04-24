@@ -322,9 +322,13 @@ epRes?.episodes || [];
         category
       )
       .then((res) => {
-        const source =
-res?.sources?.[0]
-?.url || null;
+        console.log('SOURCE RESPONSE:', res);
+
+const source =
+res?.data?.sources?.[0]?.url ||
+res?.sources?.[0]?.url ||
+res?.data?.data?.sources?.[0]?.url ||
+null;
 
 const tracks =
 res?.tracks || [];
