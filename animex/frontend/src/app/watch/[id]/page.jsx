@@ -24,17 +24,27 @@ const [defaultSrv] = useLocalStorage( 'animex_default_srv', 'hd-1' );
 
 const videoRef = useRef(null); const epId = searchParams.get('ep');
 
-const [savedProgress, setSavedProgress] = useState(null); const [showResumeModal, setShowResumeModal] = useState(false); const [autoNextEnabled, setAutoNextEnabled] = useState(true); const [showAutoNext, setShowAutoNext] = useState(false); const [countdown, setCountdown] = useState(5);
+const [savedProgress, setSavedProgress] = useState(null); const [showResumeModal, setShowResumeModal] = useState(false); const [autoNextEnabled, setAutoNextEnabled] = useState(true); const [showAutoNext, setShowAutoNext] = useState(false);
+
+useEffect(() => { if (!showAutoNext || !navigation.next) return;
+
+if (countdown === 0) { router.push( /watch/${id}?ep=${navigation.next}&server=${category} ); return; }
+
+const timer = setTimeout(() => { setCountdown((prev) => prev - 1); }, 1000);
+
+return () => clearTimeout(timer); }, [ showAutoNext, countdown, navigation.next, id, router, category ]); const [countdown, setCountdown] = useState(5);
 
 const [anime, setAnime] = useState(null); const [episodes, setEpisodes] = useState([]); const [currentEp, setCurrentEp] = useState(null); const [related, setRelated] = useState([]);
 
 const [streamUrl, setStreamUrl] = useState(null); const [subtitles, setSubtitles] = useState([]); const [availableServers, setAvailableServers] = useState([]); const [server, setServer] = useState(defaultSrv || 'hd-1');
 
-const [category, setCategory] = useState( searchParams.get('server') || defaultCat );
+const [category, setCategory] = useState( /* preserve selected dub/sub/raw state */ searchParams.get('server') || defaultCat );
 
 const [loading, setLoading] = useState(true); const [sourceError, setSourceError] = useState(false);
 
-const [navigation, setNavigation] = useState({ previous: null, current: Number(epId) || 1, next: null });
+const [navigation, setNavigation] = useState({
+
+/* Final cleanup: single source of truth = episode.number Zoro-style stable navigation */ previous: null, current: Number(epId) || 1, next: null });
 
 useEffect(() => { async function loadNavigation() { if (!id) return;
 
@@ -210,22 +220,203 @@ if (next) {
 
 useKeyboard({ ArrowLeft: () => navigate(-1), ArrowRight: () => navigate(1) });
 
-if (loading) { return <div style={{ padding: 40 }}>Loading...</div>; }
+if (loading) { return ( <div style={{ padding: 40, textAlign: 'center' }} > Loading... </div> ); }
 
-return ( <div style={{ padding: '12px 12px 24px' }}> <VideoPlayer
-ref={videoRef}
-src={streamUrl}
-subtitleTracks={subtitles}
-/>
+const animeTitle = anime?.title || anime?.name || 'Anime';
 
-<EpisodePanel
+return ( <div style={{ padding: '12px 12px 24px' }}> {/* Breadcrumb */} <div style={{ marginBottom: 12 }}> <Link href="/home">Home</Link> {' / '} <Link href={/anime/${id}}> {animeTitle} </Link> {' / '} EP {currentEp?.number || '—'} </div>
+
+{/* Continue Watching */}
+  {showResumeModal && savedProgress && (
+    <ContinueWatchingModal
+      currentTime={savedProgress}
+      onResume={() => {
+        setShowResumeModal(false);
+        videoRef.current?.seekTo?.(savedProgress);
+        videoRef.current?.play?.();
+      }}
+      onRestart={() => {
+        setShowResumeModal(false);
+        videoRef.current?.seekTo?.(0);
+        videoRef.current?.play?.();
+      }}
+    />
+  )}
+
+  {/* Player */}
+  <div className="player-box" style={{ marginBottom: 12 }}>
+    <VideoPlayer
+      ref={videoRef}
+      src={streamUrl}
+      subtitleTracks={subtitles}
+      onEnded={() => {
+        if (navigation.next && autoNextEnabled) {
+          setShowAutoNext(true);
+          setCountdown(5);
+        }
+      }}
+      onTimeUpdate={(pos, dur) => {
+        if (currentEp) {
+          saveProgress(
+            id,
+            currentEp.number,
+            currentEp.number,
+            pos,
+            dur
+          );
+        }
+      }}
+    />
+  </div>
+
+  {/* Episode Controls */}
+  <div
+    style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 12,
+      marginBottom: 16,
+      flexWrap: 'wrap'
+    }}
+  >
+    <button
+      disabled={!navigation.previous}
+      onClick={() => navigation.previous && router.push(`/watch/${id}?ep=${navigation.previous}&server=${category}`)}
+    >
+      <ChevronLeft size={14} /> Previous Episode
+    </button>
+
+    <div>
+      Episode {navigation.current}
+    </div>
+
+    <button
+      disabled={!navigation.next}
+      onClick={() => navigation.next && router.push(`/watch/${id}?ep=${navigation.next}&server=${category}`)}
+    >
+      Next Episode <ChevronRight size={14} />
+    </button>
+  </div>
+
+  {showAutoNext && navigation.next && (
+    <AutoNextModal
+      nextEpisode={navigation.next}
+      countdown={countdown}
+      onCancel={() => setShowAutoNext(false)}
+      onPlayNext={() =>
+        router.push(`/watch/${id}?ep=${navigation.next}&server=${category}`)
+      }
+    />
+  )}
+
+  {/* Server + Category Controls */}
+  <div
+    style={{
+      display: 'flex',
+      gap: 12,
+      marginBottom: 16,
+      flexWrap: 'wrap',
+      alignItems: 'center'
+    }}
+  >
+    <select
+      value={server}
+      onChange={(e) => setServer(e.target.value)}
+    >
+      {(availableServers.length
+        ? availableServers
+        : ['hd-1']
+      ).map((s) => (
+        <option
+          key={s?.name || s}
+          value={s?.name || s}
+        >
+          {s?.name || s}
+        </option>
+      ))}
+    </select>
+
+    <select
+      value={category}
+      onChange={(e) => setCategory(e.target.value)}
+    >
+      <option value="sub">SUB</option>
+      <option value="dub">DUB</option>
+      <option value="raw">RAW</option>
+    </select>
+  </div>
+
+  {/* Title */}
+  <div style={{ marginBottom: 16 }}>
+    <h1>{animeTitle}</h1>
+    {currentEp?.title && (
+      <p>
+        Episode {currentEp.number}: {currentEp.title}
+      </p>
+    )}
+  </div>
+
+  {/* Episode Panel */}
+  <EpisodePanel
     episodes={episodes}
     currentEpId={currentEp?.number}
     animeId={id}
     category={category}
     onSelect={goEpisode}
     watchedIds={new Set()}
+  /* ready for backend watched history integration */
   />
+
+  {/* Mobile Helpers */}
+  <MobileStickyNavigation
+    previous={navigation.previous}
+    current={navigation.current}
+    next={navigation.next}
+    onNavigate={(ep) =>
+      router.push(`/watch/${id}?ep=${ep}&server=${category}`)
+    }
+  />
+
+  <EpisodeQuickJump
+    totalEpisodes={episodes.length}
+    currentEpisode={Number(epId) || 1}
+    onJump={(ep) =>
+      router.push(`/watch/${id}?ep=${ep}&server=${category}`)
+    }
+  />
+
+  <ScrollToCurrentEpisode
+    currentEpisode={Number(epId) || 1}
+  />
+
+  {/* Details Link */}
+  <Link
+    href={`/anime/${id}`}
+    style={{
+      display: 'inline-block',
+      marginTop: 16,
+      marginBottom: 18
+    }}
+  >
+    View Details
+  </Link>
+
+  {/* Related Anime */}
+  {related.length > 0 && (
+    <div style={{ marginTop: 24 }}>
+      <AnimeRow
+        title="You May Also Like"
+        animes={related.map((r) => ({
+          id: r?.entry?.mal_id,
+          name: r?.entry?.name,
+          poster:
+            r?.entry?.images?.jpg?.image_url
+        }))}
+        loading={false}
+      />
+    </div>
+  )}
 </div>
 
 ); }
