@@ -1,31 +1,54 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { animeApi, userApi } from '@/lib/api';
+
+import {
+  animeApi,
+  userApi
+} from '@/lib/api';
+
 import HeroSlider from '@/components/anime/HeroSlider';
 import AnimeRow from '@/components/anime/AnimeRow';
 import TopRankedList from '@/components/anime/TopRankedList';
 import ScheduleWidget from '@/components/anime/ScheduleWidget';
+
 import { useAuth } from '@/lib/AuthContext';
 import { useWatchProgress } from '@/hooks/useWatchProgress';
 
 export default function HomePage() {
-  const { user } = useAuth();
-  const { progress } = useWatchProgress();
+  const { user } =
+    useAuth();
 
-  const [home, setHome] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [history, setHistory] = useState([]);
+  const { progress } =
+    useWatchProgress();
+
+  const [home, setHome] =
+    useState(null);
+
+  const [loading,
+    setLoading] =
+    useState(true);
+
+  const [history,
+    setHistory] =
+    useState([]);
 
   useEffect(() => {
     animeApi
       .getHome()
-      .then((d) => {
-        setHome(d?.data || null);
+      .then((res) => {
+        setHome(
+          res?.data || null
+        );
       })
-      .catch(console.error)
+      .catch(
+        console.error
+      )
       .finally(() => {
-        setLoading(false);
+        setLoading(
+          false
+        );
       });
   }, []);
 
@@ -34,83 +57,154 @@ export default function HomePage() {
 
     userApi
       .getHistory()
-      .then((d) => {
-        setHistory((d.history || []).slice(0, 12));
+      .then((res) => {
+        setHistory(
+          (
+            res?.history ||
+            []
+          ).slice(0, 12)
+        );
       })
       .catch(() => {});
   }, [user]);
 
-  const spotlight = home?.spotlightAnimes || [];
-  const trending = home?.trendingAnimes || [];
+  /*
+  Safe normalized data
+  */
 
-  const latest = home?.latestEpisodeAnimes || [];
-  const airing = home?.topAiringAnimes || [];
-  const popular = home?.mostPopularAnimes || [];
-  const favorite = home?.mostFavoriteAnimes || [];
-  const completed = home?.latestCompletedAnimes || [];
+  const spotlight =
+    home?.spotlightAnimes ||
+    [];
+
+  const trending =
+    home?.trendingAnimes ||
+    [];
+
+  const latest =
+    home?.latestEpisodeAnimes ||
+    [];
+
+  const airing =
+    home?.topAiringAnimes ||
+    [];
+
+  const popular =
+    home?.mostPopularAnimes ||
+    [];
+
+  const favorite =
+    home?.mostFavoriteAnimes ||
+    [];
+
+  const completed =
+    home?.latestCompletedAnimes ||
+    [];
 
   return (
     <div>
+      {/* Hero */}
       <HeroSlider
-        slides={spotlight}
-        loading={loading}
+        slides={
+          spotlight
+        }
+        loading={
+          loading
+        }
       />
 
-      {!loading && trending.length > 0 && (
-        <div className="trending-strip">
-          <span className="trending-label">
-            🔥 Trending
-          </span>
+      {/* Trending Strip */}
+      {!loading &&
+        trending.length >
+          0 && (
+          <div className="trending-strip">
+            <span className="trending-label">
+              🔥 Trending
+            </span>
 
-          <div className="trending-items">
-            {trending.slice(0, 14).map((a, i) => {
-              const id =
-                a.id ||
-                a.mal_id;
+            <div className="trending-items">
+              {trending
+                .slice(
+                  0,
+                  14
+                )
+                .map(
+                  (
+                    anime,
+                    i
+                  ) => {
+                    const id =
+                      anime?.id ||
+                      anime?.mal_id;
 
-              const name =
-                a.name ||
-                a.title ||
-                'Unknown';
+                    if (!id)
+                      return null;
 
-              const poster =
-                a.poster ||
-                a.images?.jpg?.image_url ||
-                '/no-poster.svg';
+                    const name =
+                      anime?.name ||
+                      anime?.title ||
+                      'Unknown';
 
-              return (
-                <Link
-                  key={id || i}
-                  href={`/anime/${id}`}
-                  className="trending-pill"
-                >
-                  <span className="trending-num">
-                    {i + 1}
-                  </span>
+                    const poster =
+                      anime?.poster ||
+                      anime?.images
+                        ?.jpg
+                        ?.large_image_url ||
+                      anime?.images
+                        ?.jpg
+                        ?.image_url ||
+                      '/no-poster.svg';
 
-                  <img
-                    src={poster}
-                    alt={name}
-                    onError={(e) => {
-                      e.currentTarget.style.display =
-                        'none';
-                    }}
-                  />
+                    return (
+                      <Link
+                        key={
+                          id ||
+                          i
+                        }
+                        href={`/anime/${id}`}
+                        className="trending-pill"
+                      >
+                        <span className="trending-num">
+                          {
+                            i +
+                            1
+                          }
+                        </span>
 
-                  {name}
-                </Link>
-              );
-            })}
+                        <img
+                          src={
+                            poster
+                          }
+                          alt={
+                            name
+                          }
+                          onError={(
+                            e
+                          ) => {
+                            e.currentTarget.style.display =
+                              'none';
+                          }}
+                        />
+
+                        {
+                          name
+                        }
+                      </Link>
+                    );
+                  }
+                )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
+      {/* Main Layout */}
       <div
         style={{
-          display: 'flex',
+          display:
+            'flex',
           gap: 0
         }}
       >
+        {/* Left */}
         <div
           style={{
             flex: 1,
@@ -119,62 +213,95 @@ export default function HomePage() {
               '20px 20px 20px 24px'
           }}
         >
+          {/* Continue Watching */}
           {user &&
-            history.length > 0 && (
+            history.length >
+              0 && (
               <AnimeRow
                 title="Continue Watching"
                 animes={history.map(
-                  (h) => ({
-                    id: h.animeId,
-                    name: h.animeTitle,
+                  (
+                    item
+                  ) => ({
+                    id:
+                      item.animeId,
+                    name:
+                      item.animeTitle,
                     poster:
-                      h.animeImage,
+                      item.animeImage,
                     type:
-                      h.animeType
+                      item.animeType,
+                    animeId:
+                      item.animeId
                   })
                 )}
-                loading={false}
+                loading={
+                  false
+                }
                 viewAllHref="/history"
-                progressMap={progress}
+                progressMap={
+                  progress
+                }
               />
             )}
 
           <AnimeRow
             title="Latest Episodes"
-            animes={latest}
-            loading={loading}
+            animes={
+              latest
+            }
+            loading={
+              loading
+            }
             viewAllHref="/latest/subbed"
           />
 
           <AnimeRow
             title="Top Airing"
-            animes={airing}
-            loading={loading}
+            animes={
+              airing
+            }
+            loading={
+              loading
+            }
             viewAllHref="/top-airing"
           />
 
           <AnimeRow
             title="Most Popular"
-            animes={popular}
-            loading={loading}
+            animes={
+              popular
+            }
+            loading={
+              loading
+            }
             viewAllHref="/popular"
           />
 
           <AnimeRow
             title="Most Favorite"
-            animes={favorite}
-            loading={loading}
+            animes={
+              favorite
+            }
+            loading={
+              loading
+            }
             viewAllHref="/most-favorite"
           />
 
           <AnimeRow
             title="Recently Completed"
-            animes={completed}
-            loading={loading}
+            animes={
+              completed
+            }
+            loading={
+              loading
+            }
             viewAllHref="/completed"
           />
         </div>
 
+        {/* Right Sidebar */}
         <aside
           className="home-right-sidebar"
           style={{
@@ -191,13 +318,17 @@ export default function HomePage() {
 
           <TopRankedList
             title="Top Airing"
-            animes={airing}
+            animes={
+              airing
+            }
             viewAllHref="/top-airing"
           />
 
           <TopRankedList
             title="Most Popular"
-            animes={popular}
+            animes={
+              popular
+            }
             viewAllHref="/popular"
           />
 
@@ -236,35 +367,46 @@ function GenreCloud() {
 
       <div
         style={{
-          padding: '12px 14px',
-          display: 'flex',
-          flexWrap: 'wrap',
+          padding:
+            '12px 14px',
+          display:
+            'flex',
+          flexWrap:
+            'wrap',
           gap: 6
         }}
       >
-        {genres.map((g) => (
-          <Link
-            key={g}
-            href={`/genre/${g
-              .toLowerCase()
-              .replace(/ /g, '-')}`}
-            style={{
-              fontSize: 11,
-              color:
-                'var(--text-3)',
-              background:
-                'var(--bg-card-alt)',
-              border:
-                '1px solid var(--border)',
-              borderRadius: 4,
-              padding: '4px 9px',
-              textDecoration:
-                'none'
-            }}
-          >
-            {g}
-          </Link>
-        ))}
+        {genres.map(
+          (genre) => (
+            <Link
+              key={
+                genre
+              }
+              href={`/genre/${genre
+                .toLowerCase()
+                .replace(
+                  / /g,
+                  '-'
+                )}`}
+              style={{
+                fontSize: 11,
+                color:
+                  'var(--text-3)',
+                background:
+                  'var(--bg-card-alt)',
+                border:
+                  '1px solid var(--border)',
+                borderRadius: 4,
+                padding:
+                  '4px 9px',
+                textDecoration:
+                  'none'
+              }}
+            >
+              {genre}
+            </Link>
+          )
+        )}
       </div>
     </div>
   );
