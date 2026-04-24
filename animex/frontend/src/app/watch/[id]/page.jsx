@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
@@ -211,7 +212,8 @@ if (loading) { return <div style={{ padding: 40 }}>Loading...</div>; }
 
 const animeTitle = anime?.title || anime?.name || 'Anime';
 
-return ( <div style={{ padding: '12px 12px 24px' }}> <div style={{ marginBottom: 12 }}> <Link href="/home">Home</Link> {' / '} <Link href={/anime/${id}}>{animeTitle}</Link> {' / '} EP {currentEp?.number || '—'} </div>
+return ( <div style={{ padding: '12px 12px 24px' }}> <div style={{ marginBottom: 12 }}> <Link href="/home">Home</Link> {' / '} <Link href={`/anime/${id}`}>
+{animeTitle}</Link> {' / '} EP {currentEp?.number || '—'} </div>
 
 {showResumeModal && savedProgress && (
     <ContinueWatchingModal
