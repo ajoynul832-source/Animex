@@ -35,4 +35,8 @@ router.patch(
   '/preferences/auto-next',
   userController.updateAutoNextPreference
 );
+router.get(
+  '/recently-watched',
+  userController.getRecentlyWatched
+);
 module.exports = router;
