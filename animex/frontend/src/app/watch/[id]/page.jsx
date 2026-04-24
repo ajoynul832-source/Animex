@@ -44,26 +44,16 @@ const SERVERS = [
 ];
 
 export default function WatchPage() {
-  const { id } =
-    useParams();
+  const { id } = useParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
-  const searchParams =
-    useSearchParams();
-
-  const router =
-    useRouter();
-
-  const { user } =
-    useAuth();
-
-  const toast =
-    useToast();
+  const { user } = useAuth();
+  const toast = useToast();
 
   const {
-    save:
-      saveProgress
-  } =
-    useWatchProgress();
+    save: saveProgress
+  } = useWatchProgress();
 
   const [defaultCat] =
     useLocalStorage(
@@ -87,9 +77,7 @@ export default function WatchPage() {
     useRef(null);
 
   const epId =
-    searchParams.get(
-      'ep'
-    );
+    searchParams.get('ep');
 
   const [anime,
     setAnime] =
@@ -117,17 +105,14 @@ export default function WatchPage() {
 
   const [server,
     setServer] =
-    useState(
-      defaultSrv
-    );
+    useState(defaultSrv);
 
   const [category,
     setCategory] =
     useState(
       searchParams.get(
         'server'
-      ) ||
-        defaultCat
+      ) || defaultCat
     );
 
   const [loading,
@@ -144,17 +129,11 @@ export default function WatchPage() {
   useEffect(() => {
     if (!id) return;
 
-    setLoading(
-      true
-    );
+    setLoading(true);
 
     Promise.all([
-      animeApi.getInfo(
-        id
-      ),
-      animeApi.getEpisodes(
-        id
-      )
+      animeApi.getInfo(id),
+      animeApi.getEpisodes(id)
     ])
       .then(
         ([
@@ -167,25 +146,19 @@ export default function WatchPage() {
 
           const eps =
             epRes?.data
-              ?.episodes ||
-            [];
+              ?.episodes || [];
 
           const selected =
             epId
               ? eps.find(
-                  (
-                    ep
-                  ) =>
+                  (ep) =>
                     String(
                       ep.mal_id ||
-                        ep.episode_id ||
-                        ep.number
+                      ep.episode_id ||
+                      ep.number
                     ) ===
-                    String(
-                      epId
-                    )
-                ) ||
-                eps[0]
+                    String(epId)
+                ) || eps[0]
               : eps[0];
 
           setAnime(
@@ -211,30 +184,20 @@ export default function WatchPage() {
         console.error
       )
       .finally(() => {
-        setLoading(
-          false
-        );
+        setLoading(false);
       });
   }, [id, epId]);
 
   /*
-  Load stream
+  Load stream safely
   */
   useEffect(() => {
     if (!currentEp)
       return;
 
-    setStreamUrl(
-      null
-    );
-
-    setSourceError(
-      false
-    );
-
-    setSubtitles(
-      []
-    );
+    setStreamUrl(null);
+    setSourceError(false);
+    setSubtitles([]);
 
     const episodeId =
       currentEp.mal_id ||
@@ -247,89 +210,80 @@ export default function WatchPage() {
         server,
         category
       )
-      .then(
-        (res) => {
-          const source =
-            res?.data
-              ?.sources?.[0]
-              ?.url ||
-            null;
+      .then((res) => {
+        const source =
+          res?.data
+            ?.sources?.[0]
+            ?.url || null;
 
-          const tracks =
-            res?.data
-              ?.tracks ||
-            [];
+        const tracks =
+          res?.data
+            ?.tracks || [];
 
-          if (
-            !source
-          ) {
-            setSourceError(
-              true
-            );
-            return;
-          }
-
-          setStreamUrl(
-            source
-          );
-
-          setSubtitles(
-            tracks.filter(
-              (
-                t
-              ) =>
-                t.kind ===
-                'captions'
-            )
-          );
-
-          /*
-          Save history
-          */
-          if (
-            user
-          ) {
-            userApi
-              .addToHistory(
-                {
-                  animeId:
-                    id,
-                  animeTitle:
-                    anime?.title ||
-                    anime?.name,
-                  animeImage:
-                    anime?.images
-                      ?.jpg
-                      ?.large_image_url ||
-                    anime?.images
-                      ?.jpg
-                      ?.image_url,
-                  episode:
-                    episodeId,
-                  episodeNumber:
-                    currentEp.number,
-                  dubOrSub:
-                    category,
-                  animeType:
-                    anime?.type ||
-                    'TV'
-                }
-              )
-              .catch(
-                () => {}
-              );
-          }
+        /*
+        IMPORTANT FIX:
+        prevent crash when
+        no real stream exists
+        */
+        if (!source) {
+          setSourceError(true);
+          return;
         }
-      )
-      .catch(() => {
-        setSourceError(
-          true
+
+        setStreamUrl(
+          source
         );
+
+        setSubtitles(
+          tracks.filter(
+            (t) =>
+              t.kind ===
+              'captions'
+          )
+        );
+
+        /*
+        Save history
+        */
+        if (user) {
+          userApi
+            .addToHistory({
+              animeId: id,
+              animeTitle:
+                anime?.title ||
+                anime?.name,
+              animeImage:
+                anime?.images
+                  ?.jpg
+                  ?.large_image_url ||
+                anime?.images
+                  ?.jpg
+                  ?.image_url ||
+                anime?.poster ||
+                '/no-poster.svg',
+              episode:
+                episodeId,
+              episodeNumber:
+                currentEp.number,
+              dubOrSub:
+                category,
+              animeType:
+                anime?.type ||
+                'TV'
+            })
+            .catch(() => {});
+        }
+      })
+      .catch(() => {
+        setSourceError(true);
       });
   }, [
     currentEp,
     server,
-    category
+    category,
+    user,
+    anime,
+    id
   ]);
 
   const currentIndex =
@@ -337,13 +291,13 @@ export default function WatchPage() {
       (ep) =>
         String(
           ep.mal_id ||
-            ep.episode_id ||
-            ep.number
+          ep.episode_id ||
+          ep.number
         ) ===
         String(
           currentEp?.mal_id ||
-            currentEp?.episode_id ||
-            currentEp?.number
+          currentEp?.episode_id ||
+          currentEp?.number
         )
     );
 
@@ -355,15 +309,12 @@ export default function WatchPage() {
           ep.episode_id ||
           ep.number;
 
-        setCurrentEp(
-          ep
-        );
+        setCurrentEp(ep);
 
         router.replace(
           `/watch/${id}?ep=${nextId}&server=${category}`,
           {
-            scroll:
-              false
+            scroll: false
           }
         );
       },
@@ -376,25 +327,18 @@ export default function WatchPage() {
 
   const navigate =
     useCallback(
-      (
-        direction
-      ) => {
+      (direction) => {
         const next =
           episodes[
             currentIndex +
               direction
           ];
 
-        if (
-          next
-        ) {
-          goEpisode(
-            next
-          );
+        if (next) {
+          goEpisode(next);
         } else {
           toast.info(
-            direction >
-              0
+            direction > 0
               ? 'No next episode'
               : 'No previous episode'
           );
@@ -414,14 +358,12 @@ export default function WatchPage() {
         if (
           autoNext &&
           episodes[
-            currentIndex +
-              1
+            currentIndex + 1
           ]
         ) {
           goEpisode(
             episodes[
-              currentIndex +
-                1
+              currentIndex + 1
             ]
           );
         }
@@ -435,21 +377,14 @@ export default function WatchPage() {
     );
 
   useKeyboard({
-    ArrowLeft:
-      () =>
-        navigate(
-          -1
-        ),
-    ArrowRight:
-      () =>
-        navigate(
-          1
-        )
+    ArrowLeft: () =>
+      navigate(-1),
+
+    ArrowRight: () =>
+      navigate(1)
   });
 
-  if (
-    loading
-  ) {
+  if (loading) {
     return (
       <div
         style={{
@@ -465,15 +400,6 @@ export default function WatchPage() {
     anime?.title ||
     anime?.name ||
     'Anime';
-
-  const poster =
-    anime?.images
-      ?.jpg
-      ?.large_image_url ||
-    anime?.images
-      ?.jpg
-      ?.image_url ||
-    '/no-poster.svg';
 
   return (
     <div
@@ -497,9 +423,7 @@ export default function WatchPage() {
         <Link
           href={`/anime/${id}`}
         >
-          {
-            animeTitle
-          }
+          {animeTitle}
         </Link>
 
         {' / '}
@@ -529,12 +453,8 @@ export default function WatchPage() {
           </div>
         ) : (
           <VideoPlayer
-            ref={
-              videoRef
-            }
-            src={
-              streamUrl
-            }
+            ref={videoRef}
+            src={streamUrl}
             subtitleTracks={
               subtitles
             }
@@ -566,8 +486,7 @@ export default function WatchPage() {
       {/* Controls */}
       <div
         style={{
-          display:
-            'flex',
+          display: 'flex',
           gap: 8,
           flexWrap:
             'wrap',
@@ -576,9 +495,7 @@ export default function WatchPage() {
       >
         <button
           onClick={() =>
-            navigate(
-              -1
-            )
+            navigate(-1)
           }
         >
           <ChevronLeft size={14} />
@@ -587,9 +504,7 @@ export default function WatchPage() {
 
         <button
           onClick={() =>
-            navigate(
-              1
-            )
+            navigate(1)
           }
         >
           Next
@@ -597,27 +512,18 @@ export default function WatchPage() {
         </button>
 
         <select
-          value={
-            server
-          }
-          onChange={(
-            e
-          ) =>
+          value={server}
+          onChange={(e) =>
             setServer(
-              e.target
-                .value
+              e.target.value
             )
           }
         >
           {SERVERS.map(
-            (
-              s
-            ) => (
+            (s) => (
               <option
                 key={s}
-                value={
-                  s
-                }
+                value={s}
               >
                 {s}
               </option>
@@ -626,15 +532,10 @@ export default function WatchPage() {
         </select>
 
         <select
-          value={
-            category
-          }
-          onChange={(
-            e
-          ) =>
+          value={category}
+          onChange={(e) =>
             setCategory(
-              e.target
-                .value
+              e.target.value
             )
           }
         >
@@ -659,9 +560,7 @@ export default function WatchPage() {
         }}
       >
         <h1>
-          {
-            animeTitle
-          }
+          {animeTitle}
         </h1>
 
         {currentEp?.title && (
@@ -678,7 +577,7 @@ export default function WatchPage() {
         )}
       </div>
 
-      {/* Details Link */}
+      {/* Details */}
       <Link
         href={`/anime/${id}`}
         style={{
@@ -690,23 +589,17 @@ export default function WatchPage() {
         View Details
       </Link>
 
-      {/* Episode Panel */}
+      {/* Episode list */}
       <EpisodePanel
-        episodes={
-          episodes
-        }
+        episodes={episodes}
         currentEpId={
           currentEp?.mal_id ||
           currentEp?.episode_id ||
           currentEp?.number
         }
         animeId={id}
-        category={
-          category
-        }
-        onSelect={
-          goEpisode
-        }
+        category={category}
+        onSelect={goEpisode}
         watchedIds={
           new Set()
         }
@@ -723,9 +616,7 @@ export default function WatchPage() {
           <AnimeRow
             title="You May Also Like"
             animes={related.map(
-              (
-                r
-              ) => ({
+              (r) => ({
                 id:
                   r?.entry
                     ?.mal_id,
@@ -739,9 +630,7 @@ export default function WatchPage() {
                     ?.image_url
               })
             )}
-            loading={
-              false
-            }
+            loading={false}
           />
         </div>
       )}
