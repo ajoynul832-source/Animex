@@ -34,7 +34,9 @@ import { useKeyboard } from '@/hooks/useKeyboard';
 import VideoPlayer from '@/components/player/VideoPlayer';
 import EpisodePanel from '@/components/player/EpisodePanel';
 import AnimeRow from '@/components/anime/AnimeRow';
-
+import MobileStickyNavigation from '@/components/watch/MobileStickyNavigation';
+import EpisodeQuickJump from '@/components/watch/EpisodeQuickJump';
+import ScrollToCurrentEpisode from '@/components/watch/ScrollToCurrentEpisode';
 import ContinueWatchingModal from '@/components/watch/ContinueWatchingModal';
 import AutoNextModal from '@/components/watch/AutoNextModal';
 
@@ -836,6 +838,30 @@ const updateAutoNext =
   View Details
 </Link>
 
+<MobileStickyNavigation
+  previous={navigation.previous}
+  current={navigation.current}
+  next={navigation.next}
+  onNavigate={(ep) =>
+    router.push(
+      `/watch/${id}?ep=${ep}&server=${category}`
+    )
+  }
+/>
+
+<EpisodeQuickJump
+  totalEpisodes={episodes.length}
+  currentEpisode={Number(epId) || 1}
+  onJump={(ep) =>
+    router.push(
+      `/watch/${id}?ep=${ep}&server=${category}`
+    )
+  }
+/>
+
+<ScrollToCurrentEpisode
+  currentEpisode={Number(epId) || 1}
+/>
 {/* Episode list */}
 <EpisodePanel
   episodes={episodes}
