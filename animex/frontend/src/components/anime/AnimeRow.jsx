@@ -1,4 +1,5 @@
 'use client';
+
 import { useRef } from 'react';
 import Link from 'next/link';
 import {
@@ -12,8 +13,8 @@ import AnimeCard, {
 
 export default function AnimeRow({
   title,
-  animes,
-  loading,
+  animes = [],
+  loading = false,
   viewAllHref,
   progressMap = {}
 }) {
@@ -25,6 +26,23 @@ export default function AnimeRow({
       behavior: 'smooth'
     });
   };
+
+  /*
+  safer support for:
+  - Jikan
+  - old backend
+  - history/watchlist
+  - related anime
+  */
+
+  const cleaned =
+    Array.isArray(animes)
+      ? animes.filter(Boolean)
+      : [];
+
+  if (!loading && cleaned.length === 0) {
+    return null;
+  }
 
   return (
     <div className="block_area">
@@ -41,7 +59,9 @@ export default function AnimeRow({
           }}
         >
           <button
-            onClick={() => scroll(-1)}
+            onClick={() =>
+              scroll(-1)
+            }
             style={{
               background:
                 'var(--bg-card-alt)',
@@ -51,17 +71,22 @@ export default function AnimeRow({
               width: 26,
               height: 26,
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              alignItems:
+                'center',
+              justifyContent:
+                'center',
               cursor: 'pointer',
-              color: 'var(--text-3)'
+              color:
+                'var(--text-3)'
             }}
           >
             <ChevronLeft size={13} />
           </button>
 
           <button
-            onClick={() => scroll(1)}
+            onClick={() =>
+              scroll(1)
+            }
             style={{
               background:
                 'var(--bg-card-alt)',
@@ -71,10 +96,13 @@ export default function AnimeRow({
               width: 26,
               height: 26,
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              alignItems:
+                'center',
+              justifyContent:
+                'center',
               cursor: 'pointer',
-              color: 'var(--text-3)'
+              color:
+                'var(--text-3)'
             }}
           >
             <ChevronRight size={13} />
@@ -97,36 +125,51 @@ export default function AnimeRow({
         ref={rowRef}
       >
         {loading ? (
-          Array.from({ length: 8 }).map(
-            (_, i) => (
-              <div
-                key={i}
-                style={{
-                  flexShrink: 0,
-                  width: 150
-                }}
-              >
-                <AnimeCardSkeleton />
-              </div>
-            )
-          )
+          Array.from({
+            length: 8
+          }).map((_, i) => (
+            <div
+              key={i}
+              style={{
+                flexShrink: 0,
+                width: 150
+              }}
+            >
+              <AnimeCardSkeleton />
+            </div>
+          ))
         ) : (
-          animes?.map((a, i) => {
-            const animeId =
-              a?.mal_id ||
-              a?.id ||
-              a?.animeId;
+          cleaned.map(
+            (anime, i) => {
+              const animeId =
+                anime?.id ||
+                anime?.mal_id ||
+                anime?.animeId ||
+                anime?.entry
+                  ?.mal_id;
 
-            return (
-              <AnimeCard
-                key={animeId || i}
-                anime={a}
-                progress={
-                  progressMap?.[animeId]
-                }
-              />
-            );
-          })
+              return (
+                <div
+                  key={
+                    animeId || i
+                  }
+                  style={{
+                    flexShrink: 0,
+                    width: 150
+                  }}
+                >
+                  <AnimeCard
+                    anime={anime}
+                    progress={
+                      progressMap?.[
+                        animeId
+                      ]
+                    }
+                  />
+                </div>
+              );
+            }
+          )
         )}
       </div>
     </div>
