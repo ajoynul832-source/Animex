@@ -419,6 +419,7 @@ error: err.message
 };
 
 /*
+
 ────────────────────────────────────────────
 EPISODES
 ────────────────────────────────────────────
@@ -469,6 +470,44 @@ res.status(502).json({
 error: err.message
 });
 }
+};
+
+/*
+────────────────────────────────────────────
+EPISODE NAVIGATION
+────────────────────────────────────────────
+*/
+
+
+exports.getEpisodeNavigation = async (req, res) => {
+  try {
+    const { id, ep } = req.params;
+    const current = Number(ep);
+
+    const totalEpisodes = 24;
+
+    const previous =
+      current > 1 ? current - 1 : null;
+
+    const next =
+      current < totalEpisodes
+        ? current + 1
+        : null;
+
+    return res.status(200).json({
+      animeId: id,
+      previous,
+      current,
+      next,
+      totalEpisodes
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message:
+        'Failed to fetch episode navigation',
+      error: error.message
+    });
+  }
 };
 
 /*
