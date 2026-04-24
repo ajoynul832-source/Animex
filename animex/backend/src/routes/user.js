@@ -30,4 +30,9 @@ router.get(
   '/watch-progress/:animeId',
   userController.getWatchProgress
 );
+// Auto Next Preference
+router.patch(
+  '/preferences/auto-next',
+  userController.updateAutoNextPreference
+);
 module.exports = router;
