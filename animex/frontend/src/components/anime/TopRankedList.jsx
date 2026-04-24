@@ -2,90 +2,157 @@ import Link from 'next/link';
 
 export default function TopRankedList({
   title,
-  animes,
+  animes = [],
   viewAllHref
 }) {
-  if (!animes?.length) return null;
+  /*
+  Supports:
+  - Jikan
+  - old backend
+  - normalized homepage data
+  */
+
+  const cleaned =
+    Array.isArray(animes)
+      ? animes.filter(Boolean)
+      : [];
+
+  if (!cleaned.length) {
+    return null;
+  }
 
   return (
     <div
       className="anif-block"
-      style={{ marginBottom: 18 }}
+      style={{
+        marginBottom: 18
+      }}
     >
       <div className="anif-block-header">
         {title}
       </div>
 
       <ul className="anif-ul">
-        {animes.slice(0, 5).map((a, i) => {
-          const id =
-            a.mal_id ||
-            a.id;
+        {cleaned
+          .slice(0, 5)
+          .map((anime, i) => {
+            const id =
+              anime?.id ||
+              anime?.mal_id ||
+              anime?.animeId ||
+              anime?.entry?.mal_id;
 
-          const name =
-            a.title ||
-            a.name ||
-            'Unknown Anime';
+            if (!id) return null;
 
-          const poster =
-            a.images?.jpg?.image_url ||
-            a.poster ||
-            '/no-poster.svg';
+            const name =
+              anime?.name ||
+              anime?.title ||
+              anime?.title_english ||
+              anime?.animeName ||
+              anime?.entry?.name ||
+              'Unknown Anime';
 
-          const type =
-            a.type ||
-            '';
+            const poster =
+              anime?.poster ||
+              anime?.images?.jpg
+                ?.large_image_url ||
+              anime?.images?.jpg
+                ?.image_url ||
+              anime?.image ||
+              anime?.animeImage ||
+              anime?.entry?.images?.jpg
+                ?.large_image_url ||
+              anime?.entry?.images?.jpg
+                ?.image_url ||
+              '/no-poster.svg';
 
-          const episodes =
-            a.episodes ||
-            null;
+            const type =
+              anime?.type ||
+              anime?.animeType ||
+              '';
 
-          return (
-            <li key={id || i}>
-              <span className="anif-rank">
-                {String(i + 1).padStart(2, '0')}
-              </span>
+            const episodes =
+              anime?.episodes?.sub ||
+              anime?.episodes ||
+              null;
 
-              <img
-                className="anif-poster"
-                src={poster}
-                alt={name}
-                loading="lazy"
-                onError={(e) =>
-                  (e.currentTarget.src =
-                    '/no-poster.svg')
-                }
-              />
+            const score =
+              anime?.rating ||
+              anime?.score ||
+              null;
 
-              <div className="anif-info">
-                <Link
-                  href={`/anime/${id}`}
-                  className="anif-name"
-                >
-                  {name}
-                </Link>
-
-                <div className="anif-meta">
-                  {type && (
-                    <span>{type}</span>
+            return (
+              <li
+                key={id || i}
+              >
+                <span className="anif-rank">
+                  {String(
+                    i + 1
+                  ).padStart(
+                    2,
+                    '0'
                   )}
+                </span>
 
-                  {episodes?.sub != null && (
-                    <span
-                      style={{
-                        color:
-                          'var(--sub-color)',
-                        fontWeight: 700
-                      }}
-                    >
-                      SUB {episodes.sub}
-                    </span>
-                  )}
+                <img
+                  className="anif-poster"
+                  src={poster}
+                  alt={name}
+                  loading="lazy"
+                  onError={(
+                    e
+                  ) => {
+                    e.currentTarget.src =
+                      '/no-poster.svg';
+                  }}
+                />
+
+                <div className="anif-info">
+                  <Link
+                    href={`/anime/${id}`}
+                    className="anif-name"
+                  >
+                    {name}
+                  </Link>
+
+                  <div className="anif-meta">
+                    {type && (
+                      <span>
+                        {type}
+                      </span>
+                    )}
+
+                    {episodes && (
+                      <span
+                        style={{
+                          color:
+                            'var(--sub-color)',
+                          fontWeight: 700
+                        }}
+                      >
+                        EP{' '}
+                        {
+                          episodes
+                        }
+                      </span>
+                    )}
+
+                    {!episodes &&
+                      score && (
+                        <span>
+                          ★{' '}
+                          {Number(
+                            score
+                          ).toFixed(
+                            1
+                          )}
+                        </span>
+                      )}
+                  </div>
                 </div>
-              </div>
-            </li>
-          );
-        })}
+              </li>
+            );
+          })}
       </ul>
 
       {viewAllHref && (
