@@ -189,9 +189,10 @@ export default function EpisodePanel({
               ) {
                 return (
                   <button
-                    key={
-                      ep.safeId
-                    }
+  key={
+    ep.safeId
+  }
+  id={`episode-${ep.safeNumber}`}
                     onClick={() =>
                       onSelect(
                         ep
@@ -218,10 +219,11 @@ export default function EpisodePanel({
               }
 
               return (
-                <Link
-                  key={
-                    ep.safeId
-                  }
+              <Link
+  key={
+    ep.safeId
+  }
+  id={`episode-${ep.safeNumber}`}
                   href={`/watch/${animeId}?ep=${ep.safeId}&server=${category}`}
                   className={
                     classes
