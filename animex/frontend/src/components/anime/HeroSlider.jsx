@@ -1,4 +1,7 @@
 'use client';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import 'swiper/css/effect-fade';
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Play, Info, Star, Tv, Clock } from 'lucide-react';
