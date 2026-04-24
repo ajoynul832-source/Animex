@@ -464,51 +464,104 @@ until real provider is connected
 ────────────────────────────────────────────
 */
 
-exports.getSources = async (
-  req,
-  res
-) => {
-  try {
-    const {
-      episodeId
-    } = req.query;
+exports.getSources = async (req, res) => {
+try {
+const {
+episodeId,
+server = 'hd-1',
+category = 'sub'
+} = req.query;
 
-    if (!episodeId) {
-      return res
-        .status(400)
-        .json({
-          error:
-            'episodeId is required'
-        });
-    }
+if (!episodeId) {
+return res.status(400).json({
+error: 'episodeId is required'
+});
+}
 
-    res.json({
-      data: {
-        sources: [
-          {
-            url:
-              DEMO_STREAM_URL,
-            isM3U8: true
-          }
-        ],
+/*
+Temporary multi-server system
+Later replace URLs with real provider extractors
+*/
 
-        tracks: [],
+const serverMap = {
+'hd-1': {
+name: 'Vidstream',
+url: DEMO_STREAM_URL
+},
 
-        intro: null,
-        outro: null,
+'hd-2': {
+name: 'Filemoon',
+url: DEMO_STREAM_URL
+},
 
-        provider:
-          'temporary-demo-stream',
+'hd-3': {
+name: 'StreamSB',
+url: DEMO_STREAM_URL
+},
 
-        note:
-          'Replace with real anime stream provider later'
-      }
-    });
-  } catch (err) {
-    res.status(500).json({
-      error: err.message
-    });
-  }
+'StreamSB': {
+name: 'StreamSB',
+url: DEMO_STREAM_URL
+},
+
+'StreamTape': {
+name: 'StreamTape',
+url: DEMO_STREAM_URL
+}
+};
+
+const selected =
+serverMap[server] ||
+serverMap['hd-1'];
+
+const servers = Object.keys(serverMap).map((key) => ({
+key,
+name: serverMap[key].name,
+category,
+url: serverMap[key].url
+}));
+
+res.json({
+data: {
+episodeId,
+provider: selected.name,
+currentServer: server,
+category,
+
+/*
+Important:
+frontend currently reads:
+sources[0].url
+*/
+
+sources: [
+{
+url: selected.url,
+isM3U8: true
+}
+],
+
+/*
+New:
+proper server selector support
+*/
+
+servers,
+
+tracks: [],
+
+intro: null,
+outro: null,
+
+note:
+'Temporary multi-server demo. Replace with real extractor later.'
+}
+});
+} catch (err) {
+res.status(500).json({
+error: err.message
+});
+}
 };
 
 /*
