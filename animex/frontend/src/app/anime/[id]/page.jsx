@@ -40,11 +40,16 @@ export default function AnimeDetailPage() {
       animeApi.getEpisodes(id)
     ])
       .then(([infoRes, epRes]) => {
-        const animeData = infoRes?.data || null;
+        const animeData =
+          infoRes?.data || null;
 
         setAnime(animeData);
-        setEpisodes(epRes?.data?.episodes || []);
-        setRelated(animeData?.relations || []);
+        setEpisodes(
+          epRes?.data?.episodes || []
+        );
+        setRelated(
+          animeData?.relations || []
+        );
       })
       .catch(console.error)
       .finally(() => {
@@ -58,7 +63,9 @@ export default function AnimeDetailPage() {
     userApi
       .checkWatchlist(id)
       .then((d) => {
-        setInList(d?.inWatchlist || false);
+        setInList(
+          d?.inWatchlist || false
+        );
       })
       .catch(() => {});
   }, [user, id]);
@@ -71,21 +78,32 @@ export default function AnimeDetailPage() {
 
     try {
       if (inList) {
-        await userApi.removeFromWatchlist(id);
+        await userApi.removeFromWatchlist(
+          id
+        );
+
         setInList(false);
-        toast.success('Removed from watchlist');
+        toast.success(
+          'Removed from watchlist'
+        );
       } else {
         await userApi.addToWatchlist({
           animeId: id,
-          animeName: anime?.title,
+          animeName:
+            anime?.title,
           animeImage:
-            anime?.images?.jpg?.large_image_url ||
-            anime?.images?.jpg?.image_url,
-          animeType: anime?.type
+            anime?.images?.jpg
+              ?.large_image_url ||
+            anime?.images?.jpg
+              ?.image_url,
+          animeType:
+            anime?.type
         });
 
         setInList(true);
-        toast.success('Added to watchlist');
+        toast.success(
+          'Added to watchlist'
+        );
       }
     } catch (e) {
       toast.error(e.message);
@@ -93,28 +111,38 @@ export default function AnimeDetailPage() {
   };
 
   const share = async () => {
-    const url = window.location.href;
+    const url =
+      window.location.href;
 
     if (navigator.share) {
       await navigator.share({
-        title: anime?.title,
+        title:
+          anime?.title,
         url
       });
     } else {
-      await navigator.clipboard.writeText(url);
-      toast.success('Link copied');
+      await navigator.clipboard.writeText(
+        url
+      );
+      toast.success(
+        'Link copied'
+      );
     }
   };
 
-  if (loading) return <LoadSkel />;
+  if (loading) {
+    return <LoadSkel />;
+  }
 
   if (!anime) {
     return (
       <div
         className="page-inner"
         style={{
-          textAlign: 'center',
-          color: 'var(--text-3)',
+          textAlign:
+            'center',
+          color:
+            'var(--text-3)',
           padding: 40
         }}
       >
@@ -124,8 +152,10 @@ export default function AnimeDetailPage() {
   }
 
   const poster =
-    anime?.images?.jpg?.large_image_url ||
-    anime?.images?.jpg?.image_url ||
+    anime?.images?.jpg
+      ?.large_image_url ||
+    anime?.images?.jpg
+      ?.image_url ||
     '/no-poster.svg';
 
   const title =
@@ -137,9 +167,31 @@ export default function AnimeDetailPage() {
     anime?.synopsis || '';
 
   const genres =
-    anime?.genres?.map((g) => g.name) || [];
+    anime?.genres?.map(
+      (g) => g.name
+    ) || [];
 
-  const firstEp = episodes?.[0];
+  const studios =
+    anime?.studios?.map(
+      (s) => s.name
+    ) || [];
+
+  const japaneseTitle =
+    anime?.title_japanese ||
+    '';
+
+  const aired =
+    anime?.aired?.string ||
+    '';
+
+  const premiered =
+    anime?.season &&
+    anime?.year
+      ? `${anime.season} ${anime.year}`
+      : '';
+
+  const firstEp =
+    episodes?.[0];
 
   return (
     <div>
@@ -150,7 +202,8 @@ export default function AnimeDetailPage() {
           src={poster}
           alt={title}
           onError={(e) => {
-            e.currentTarget.style.display = 'none';
+            e.currentTarget.style.display =
+              'none';
           }}
         />
       </div>
@@ -172,7 +225,12 @@ export default function AnimeDetailPage() {
             <div className="anime-actions">
               {firstEp && (
                 <Link
-                  href={`/watch/${id}?ep=${firstEp.mal_id || firstEp.episode_id || 1}`}
+                  href={`/watch/${id}?ep=${
+                    firstEp.mal_id ||
+                    firstEp.episode_id ||
+                    firstEp.number ||
+                    1
+                  }`}
                   className="btn-action btn-action-primary"
                 >
                   <Play
@@ -185,7 +243,9 @@ export default function AnimeDetailPage() {
               )}
 
               <button
-                onClick={toggleList}
+                onClick={
+                  toggleList
+                }
                 className="btn-action btn-action-outline"
               >
                 {inList ? (
@@ -212,16 +272,33 @@ export default function AnimeDetailPage() {
           </div>
 
           {/* Right */}
-          <div style={{ flex: 1 }}>
+          <div
+            style={{
+              flex: 1
+            }}
+          >
             <h1
               style={{
                 fontSize: 30,
                 fontWeight: 700,
-                marginBottom: 8
+                marginBottom: 6
               }}
             >
               {title}
             </h1>
+
+            {japaneseTitle && (
+              <p
+                style={{
+                  fontSize: 13,
+                  color:
+                    'var(--text-3)',
+                  marginBottom: 12
+                }}
+              >
+                {japaneseTitle}
+              </p>
+            )}
 
             <div className="stat-badges">
               {anime?.score && (
@@ -252,55 +329,85 @@ export default function AnimeDetailPage() {
                   {anime.duration}
                 </span>
               )}
+
+              {anime?.episodes && (
+                <span className="stat-badge">
+                  {anime.episodes}{' '}
+                  Episodes
+                </span>
+              )}
             </div>
 
-            {genres.length > 0 && (
+            {genres.length >
+              0 && (
               <div
                 className="genre-tags"
-                style={{ marginTop: 12 }}
+                style={{
+                  marginTop: 12
+                }}
               >
-                {genres.map((g) => (
-                  <Link
-                    key={g}
-                    href={`/genre/${g.toLowerCase()}`}
-                    className="genre-tag"
-                  >
-                    {g}
-                  </Link>
-                ))}
+                {genres.map(
+                  (g) => (
+                    <Link
+                      key={g}
+                      href={`/genre/${g.toLowerCase().replace(
+                        / /g,
+                        '-'
+                      )}`}
+                      className="genre-tag"
+                    >
+                      {g}
+                    </Link>
+                  )
+                )}
               </div>
             )}
 
             {synopsis && (
-              <div style={{ marginTop: 14 }}>
+              <div
+                style={{
+                  marginTop: 14
+                }}
+              >
                 <p
                   style={{
                     fontSize: 13,
                     lineHeight: 1.7,
-                    display: '-webkit-box',
-                    WebkitLineClamp: expanded
-                      ? 'unset'
-                      : 4,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: expanded
-                      ? 'visible'
-                      : 'hidden'
+                    display:
+                      '-webkit-box',
+                    WebkitLineClamp:
+                      expanded
+                        ? 'unset'
+                        : 4,
+                    WebkitBoxOrient:
+                      'vertical',
+                    overflow:
+                      expanded
+                        ? 'visible'
+                        : 'hidden'
                   }}
                 >
                   {synopsis}
                 </p>
 
-                {synopsis.length > 200 && (
+                {synopsis.length >
+                  200 && (
                   <button
                     onClick={() =>
-                      setExpanded(!expanded)
+                      setExpanded(
+                        !expanded
+                      )
                     }
                     style={{
                       marginTop: 6,
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--accent)',
-                      cursor: 'pointer'
+                      background:
+                        'none',
+                      border:
+                        'none',
+                      color:
+                        'var(--accent)',
+                      cursor:
+                        'pointer'
                     }}
                   >
                     {expanded ? (
@@ -318,34 +425,97 @@ export default function AnimeDetailPage() {
                 )}
               </div>
             )}
+
+            <div
+              style={{
+                marginTop: 18,
+                display:
+                  'grid',
+                gridTemplateColumns:
+                  '1fr 1fr',
+                gap:
+                  '10px 20px'
+              }}
+            >
+              {aired && (
+                <InfoRow
+                  label="Aired"
+                  value={aired}
+                />
+              )}
+
+              {premiered && (
+                <InfoRow
+                  label="Premiered"
+                  value={
+                    premiered
+                  }
+                />
+              )}
+
+              {studios.length >
+                0 && (
+                <InfoRow
+                  label="Studios"
+                  value={studios.join(
+                    ', '
+                  )}
+                />
+              )}
+
+              {anime?.rating && (
+                <InfoRow
+                  label="Rating"
+                  value={
+                    anime.rating
+                  }
+                />
+              )}
+            </div>
           </div>
         </div>
 
         {/* Tabs */}
         <div
           style={{
-            display: 'flex',
+            display:
+              'flex',
             gap: 10,
-            marginTop: 24,
+            marginTop: 28,
             marginBottom: 16
           }}
         >
-          <button onClick={() => setTab('episodes')}>
+          <button
+            onClick={() =>
+              setTab(
+                'episodes'
+              )
+            }
+          >
             Episodes
           </button>
 
-          <button onClick={() => setTab('related')}>
+          <button
+            onClick={() =>
+              setTab(
+                'related'
+              )
+            }
+          >
             Related
           </button>
         </div>
 
         {/* Episodes */}
-        {tab === 'episodes' && (
+        {tab ===
+          'episodes' && (
           <div>
             <div
               style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
+                background:
+                  'var(--bg-card)',
+                border:
+                  '1px solid var(--border)',
                 borderRadius: 8,
                 padding: 14
               }}
@@ -356,45 +526,104 @@ export default function AnimeDetailPage() {
                   fontSize: 12
                 }}
               >
-                {episodes.length} Episodes
+                {
+                  episodes.length
+                }{' '}
+                Episodes
               </div>
 
               <div className="ep-grid">
-                {episodes.map((ep, i) => (
-                  <Link
-                    key={i}
-                    href={`/watch/${id}?ep=${ep.mal_id || ep.episode_id || i + 1}`}
-                    className="ep-btn"
-                  >
-                    {ep.mal_id || ep.number || i + 1}
-                  </Link>
-                ))}
+                {episodes.map(
+                  (
+                    ep,
+                    i
+                  ) => (
+                    <Link
+                      key={i}
+                      href={`/watch/${id}?ep=${
+                        ep.mal_id ||
+                        ep.episode_id ||
+                        ep.number ||
+                        i + 1
+                      }`}
+                      className="ep-btn"
+                    >
+                      {ep.number ||
+                        i + 1}
+                    </Link>
+                  )
+                )}
               </div>
             </div>
           </div>
         )}
 
         {/* Related */}
-        {tab === 'related' && (
+        {tab ===
+          'related' && (
           <div className="film-grid">
-            {related.length > 0 ? (
-              related.map((r, i) => (
-                <AnimeCard
-                  key={i}
-                  anime={{
-                    id: r?.entry?.mal_id,
-                    name: r?.entry?.name,
-                    poster:
-                      r?.entry?.images?.jpg
-                        ?.image_url
-                  }}
-                />
-              ))
+            {related.length >
+            0 ? (
+              related.map(
+                (
+                  r,
+                  i
+                ) => (
+                  <AnimeCard
+                    key={i}
+                    anime={{
+                      id:
+                        r?.entry
+                          ?.mal_id,
+                      name:
+                        r?.entry
+                          ?.name,
+                      poster:
+                        r?.entry
+                          ?.images
+                          ?.jpg
+                          ?.image_url
+                    }}
+                  />
+                )
+              )
             ) : (
-              <p>No related anime.</p>
+              <p>
+                No related
+                anime.
+              </p>
             )}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({
+  label,
+  value
+}) {
+  return (
+    <div>
+      <div
+        style={{
+          fontSize: 11,
+          color:
+            'var(--text-3)',
+          marginBottom: 2
+        }}
+      >
+        {label}
+      </div>
+
+      <div
+        style={{
+          fontSize: 13,
+          fontWeight: 500
+        }}
+      >
+        {value}
       </div>
     </div>
   );
@@ -405,7 +634,9 @@ function LoadSkel() {
     <div>
       <div
         className="skeleton"
-        style={{ height: 220 }}
+        style={{
+          height: 220
+        }}
       />
     </div>
   );
