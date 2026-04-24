@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { List } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -13,9 +13,11 @@ export default function EpisodePanel({
   onSelect,
   watchedIds = new Set()
 }) {
-  const [rawSearch,
-    setRawSearch] =
+  const [rawSearch, setRawSearch] =
     useState('');
+
+  const [range, setRange] =
+    useState(1);
 
   const search =
     useDebounce(
@@ -24,10 +26,14 @@ export default function EpisodePanel({
     );
 
   /*
-  Safe support for:
-  - Jikan episodes
-  - old backend
-  - normalized episode objects
+  IMPORTANT FIX:
+  Use ONLY episode.number
+  as the main identity
+
+  No more:
+  - mal_id
+  - episode_id
+  - mixed IDs
   */
 
   const normalized =
@@ -38,18 +44,17 @@ export default function EpisodePanel({
           .filter(Boolean)
           .map((ep, i) => ({
             ...ep,
+
             safeId:
-              ep.episodeId ||
-              ep.mal_id ||
-              ep.episode_id ||
-              ep.id ||
-              ep.number ||
-              i + 1,
+              Number(
+                ep.number
+              ) || i + 1,
+
             safeNumber:
-              ep.number ||
-              ep.mal_id ||
-              ep.episode_number ||
-              i + 1,
+              Number(
+                ep.number
+              ) || i + 1,
+
             safeTitle:
               ep.title ||
               ep.name ||
@@ -57,10 +62,40 @@ export default function EpisodePanel({
           }))
       : [];
 
+  /*
+  Zoro-style:
+  50 episode range selector
+  */
+
+  const totalRanges =
+    Math.ceil(
+      normalized.length /
+        50
+    ) || 1;
+
   const filtered =
-    search
-      ? normalized.filter(
+    useMemo(() => {
+      const start =
+        (range - 1) *
+          50 +
+        1;
+
+      const end =
+        range * 50;
+
+      return normalized
+        .filter(
           (ep) =>
+            ep.safeNumber >=
+              start &&
+            ep.safeNumber <=
+              end
+        )
+        .filter((ep) => {
+          if (!search)
+            return true;
+
+          return (
             String(
               ep.safeNumber
             ).includes(
@@ -71,8 +106,13 @@ export default function EpisodePanel({
               .includes(
                 search.toLowerCase()
               )
-        )
-      : normalized;
+          );
+        });
+    }, [
+      normalized,
+      range,
+      search
+    ]);
 
   return (
     <div className="ep-panel">
@@ -105,67 +145,106 @@ export default function EpisodePanel({
           </span>
         </span>
 
-        <input
-          className="ep-search"
-          type="text"
-          value={
-            rawSearch
-          }
-          onChange={(
-            e
-          ) =>
-            setRawSearch(
-              e.target
-                .value
-            )
-          }
-          placeholder="Ep #..."
-        />
-      </div>
-
-      {/* Range info */}
-      {normalized.length >
-        100 && (
         <div
           style={{
-            padding:
-              '6px 12px',
-            fontSize: 11,
-            color:
-              'var(--text-3)',
-            borderBottom:
-              '1px solid var(--border)',
-            background:
-              'var(--bg-card-alt)'
+            display:
+              'flex',
+            gap: 8,
+            flexWrap:
+              'wrap'
           }}
         >
-          Showing{' '}
-          {
-            filtered.length
-          }{' '}
-          of{' '}
-          {
-            normalized.length
-          }
-        </div>
-      )}
+          <input
+            className="ep-search"
+            type="text"
+            value={
+              rawSearch
+            }
+            onChange={(
+              e
+            ) =>
+              setRawSearch(
+                e.target
+                  .value
+              )
+            }
+            placeholder="Ep #..."
+          />
 
-      {/* Episode Grid */}
+          {totalRanges >
+            1 && (
+            <select
+              value={
+                range
+              }
+              onChange={(
+                e
+              ) =>
+                setRange(
+                  Number(
+                    e.target
+                      .value
+                  )
+                )
+              }
+              className="ep-search"
+            >
+              {Array.from(
+                {
+                  length:
+                    totalRanges
+                },
+                (_, i) => {
+                  const start =
+                    i *
+                      50 +
+                    1;
+
+                  const end =
+                    Math.min(
+                      (i +
+                        1) *
+                        50,
+                      normalized.length
+                    );
+
+                  return (
+                    <option
+                      key={
+                        i + 1
+                      }
+                      value={
+                        i + 1
+                      }
+                    >
+                      {start}
+                      -
+                      {end}
+                    </option>
+                  );
+                }
+              )}
+            </select>
+          )}
+        </div>
+      </div>
+
+      {/* Body */}
       <div className="ep-panel-body">
         <div className="ep-grid">
           {filtered.map(
             (ep) => {
               const isActive =
-                String(
-                  ep.safeId
+                Number(
+                  ep.safeNumber
                 ) ===
-                String(
+                Number(
                   currentEpId
                 );
 
               const isWatched =
                 watchedIds.has(
-                  ep.safeId
+                  ep.safeNumber
                 );
 
               const classes =
@@ -184,15 +263,20 @@ export default function EpisodePanel({
                     : ''
                 }`;
 
+              /*
+              Real current episode
+              highlight support
+              */
+
               if (
                 onSelect
               ) {
                 return (
                   <button
-  key={
-    ep.safeId
-  }
-  id={`episode-${ep.safeNumber}`}
+                    key={
+                      ep.safeId
+                    }
+                    id={`episode-${ep.safeNumber}`}
                     onClick={() =>
                       onSelect(
                         ep
@@ -219,12 +303,12 @@ export default function EpisodePanel({
               }
 
               return (
-              <Link
-  key={
-    ep.safeId
-  }
-  id={`episode-${ep.safeNumber}`}
-                  href={`/watch/${animeId}?ep=${ep.safeId}&server=${category}`}
+                <Link
+                  key={
+                    ep.safeId
+                  }
+                  id={`episode-${ep.safeNumber}`}
+                  href={`/watch/${animeId}?ep=${ep.safeNumber}&server=${category}`}
                   className={
                     classes
                   }
@@ -241,7 +325,6 @@ export default function EpisodePanel({
           )}
         </div>
 
-        {/* Empty */}
         {filtered.length ===
           0 && (
           <p
