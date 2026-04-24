@@ -41,14 +41,53 @@ export default function AnimeDetailPage() {
       animeApi.getInfo(id),
       animeApi.getEpisodes(id)
     ])
-      .then(([infoRes, epRes]) => {
-        const animeData = infoRes?.data || null;
+.then(([infoRes, epRes]) => {
+const animeData =
+infoRes?.data ||
+infoRes ||
+null;
 
-        setAnime(animeData);
-        setEpisodes(epRes?.data?.episodes || []);
-        setRelated(animeData?.relations || []);
-        setCharacters(animeData?.characters || []);
-      })
+const episodeData =
+epRes?.data?.episodes ||
+epRes?.episodes ||
+epRes?.data?.data ||
+epRes?.data ||
+[];
+
+const relatedData =
+animeData?.relations ||
+animeData?.relatedAnime ||
+animeData?.related ||
+animeData?.recommendations ||
+[];
+
+const characterData =
+animeData?.characters ||
+animeData?.characterVoiceActor ||
+animeData?.character ||
+animeData?.charactersVoiceActors ||
+[];
+
+setAnime(animeData);
+
+setEpisodes(
+Array.isArray(episodeData)
+? episodeData
+: []
+);
+
+setRelated(
+Array.isArray(relatedData)
+? relatedData
+: []
+);
+
+setCharacters(
+Array.isArray(characterData)
+? characterData
+: []
+);
+})
       .catch(console.error)
       .finally(() => {
         setLoading(false);
