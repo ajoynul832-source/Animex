@@ -1,46 +1,76 @@
 import Link from 'next/link';
 import { Play, Star } from 'lucide-react';
 
-export default function AnimeCard({ anime, progress }) {
+export default function AnimeCard({
+  anime,
+  progress
+}) {
   if (!anime) return null;
+
+  /*
+  Full safe mapping:
+  supports Jikan + old data + history/watchlist
+  */
 
   const id =
     anime.id ||
     anime.mal_id ||
-    anime.animeId;
+    anime.animeId ||
+    anime.entry?.mal_id;
+
+  if (!id) return null;
 
   const name =
     anime.name ||
     anime.title ||
+    anime.title_english ||
     anime.animeName ||
+    anime.entry?.name ||
     'Unknown Anime';
 
   const poster =
     anime.poster ||
     anime.images?.jpg?.large_image_url ||
     anime.images?.jpg?.image_url ||
+    anime.image ||
     anime.animeImage ||
+    anime.entry?.images?.jpg?.large_image_url ||
+    anime.entry?.images?.jpg?.image_url ||
     '/no-poster.svg';
 
   const type =
     anime.type ||
     anime.animeType ||
+    anime.media_type ||
     '';
 
   const rating =
     anime.rating ||
     anime.score ||
+    anime.scored ||
     null;
 
-  const pct =
+  const episodes =
+    anime.episodes?.sub ||
+    anime.episodes ||
+    null;
+
+  const progressPercent =
     progress?.percent || 0;
+
+  const watchHref =
+    progress?.episodeId
+      ? `/watch/${id}?ep=${progress.episodeId}`
+      : `/anime/${id}`;
 
   return (
     <div className="flw-item">
       <Link
-        href={`/anime/${id}`}
+        href={watchHref}
         className="film-poster-wrap"
-        style={{ display: 'block' }}
+        style={{
+          display: 'block'
+        }}
       >
         <img
           className="film-poster-img"
@@ -72,7 +102,7 @@ export default function AnimeCard({ anime, progress }) {
               fill="currentColor"
               strokeWidth={0}
             />
-            {rating}
+            {Number(rating).toFixed(1)}
           </div>
         )}
 
@@ -82,13 +112,28 @@ export default function AnimeCard({ anime, progress }) {
           </div>
         )}
 
-        {pct > 0 && (
+        {episodes && (
+          <div
+            className="tick-item tick-sub"
+            style={{
+              position:
+                'absolute',
+              bottom: 8,
+              left: 8
+            }}
+          >
+            EP {episodes}
+          </div>
+        )}
+
+        {progressPercent >
+          0 && (
           <div className="progress-bar">
             <div
               className="progress-bar-fill"
               style={{
                 width: `${Math.min(
-                  pct,
+                  progressPercent,
                   100
                 )}%`
               }}
@@ -99,13 +144,23 @@ export default function AnimeCard({ anime, progress }) {
 
       <div className="film-detail">
         <h3 className="film-name">
-          <Link href={`/anime/${id}`}>
+          <Link
+            href={`/anime/${id}`}
+          >
             {name}
           </Link>
         </h3>
 
         <div className="fd-infor">
-          {type && <span>{type}</span>}
+          {type && (
+            <span>{type}</span>
+          )}
+
+          {episodes && (
+            <span>
+              • EP {episodes}
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -118,7 +173,8 @@ export function AnimeCardSkeleton() {
       <div
         className="skeleton"
         style={{
-          paddingBottom: '140%',
+          paddingBottom:
+            '140%',
           borderRadius: 6
         }}
       />
