@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -330,12 +331,11 @@ export default function AnimeDetailPage() {
                 </span>
               )}
 
-              {anime?.episodes && (
-                <span className="stat-badge">
-                  {anime.episodes}{' '}
-                  Episodes
-                </span>
-              )}
+              {anime?.episodes?.sub != null && (
+<span className="stat-badge">
+  {anime.episodes.sub} Episodes
+</span>
+)}
             </div>
 
             {genres.length >
