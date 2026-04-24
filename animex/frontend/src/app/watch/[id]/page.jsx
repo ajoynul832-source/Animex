@@ -35,6 +35,8 @@ import VideoPlayer from '@/components/player/VideoPlayer';
 import EpisodePanel from '@/components/player/EpisodePanel';
 import AnimeRow from '@/components/anime/AnimeRow';
 
+import ContinueWatchingModal from '@/components/watch/ContinueWatchingModal';
+
 const SERVERS = [
   'hd-1',
   'hd-2',
@@ -75,7 +77,14 @@ export default function WatchPage() {
 
   const videoRef =
     useRef(null);
+    
+const [savedProgress,
+  setSavedProgress] =
+  useState(null);
 
+const [showResumeModal,
+  setShowResumeModal] =
+  useState(false);
   const epId =
     searchParams.get('ep');
 
@@ -159,6 +168,36 @@ console.error(err);
 
 loadNavigation();
 }, [id, epId]);
+useEffect(() => {
+  async function loadProgress() {
+    if (!id) return;
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/user/watch-progress/${id}`,
+        {
+          credentials: 'include'
+        }
+      );
+
+      const data = await res.json();
+
+      if (
+        data?.progress?.currentTime > 60
+      ) {
+        setSavedProgress(
+          data.progress.currentTime
+        );
+
+        setShowResumeModal(true);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  loadProgress();
+}, [id]);
 
   /*
   Load anime + episodes
@@ -322,6 +361,40 @@ loadNavigation();
     anime,
     id
   ]);
+  
+  useEffect(() => {
+  if (!id || !currentEp || !user)
+    return;
+
+  const interval =
+    setInterval(async () => {
+      try {
+        await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/user/watch-progress`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type':
+                'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              animeId: id,
+              episodeNumber:
+                currentEp.number,
+              currentTime: 300,
+              duration: 1400
+            })
+          }
+        );
+      } catch (err) {
+        console.error(err);
+      }
+    }, 30000);
+
+  return () =>
+    clearInterval(interval);
+}, [id, currentEp, user]);
 
   const currentIndex =
     episodes.findIndex(
@@ -469,6 +542,19 @@ loadNavigation();
         {currentEp?.number ||
           '—'}
       </div>
+
+{showResumeModal &&
+  savedProgress && (
+    <ContinueWatchingModal
+      currentTime={savedProgress}
+      onResume={() => {
+        setShowResumeModal(false);
+      }}
+      onRestart={() => {
+        setShowResumeModal(false);
+      }}
+    />
+)}
 
       {/* Player */}
       <div
