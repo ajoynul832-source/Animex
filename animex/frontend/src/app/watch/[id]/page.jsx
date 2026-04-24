@@ -254,12 +254,10 @@ useEffect(() => {
           epRes
         ]) => {
           const animeData =
-            infoRes?.data ||
-            null;
+infoRes || null;
 
-          const eps =
-            epRes?.data
-              ?.episodes || [];
+const eps =
+epRes?.episodes || [];
 
           const selected =
             epId
@@ -325,14 +323,11 @@ useEffect(() => {
       )
       .then((res) => {
         const source =
-          res?.data
-            ?.sources?.[0]
-            ?.url || null;
+res?.sources?.[0]
+?.url || null;
 
-        const tracks =
-          res?.data
-            ?.tracks || [];
-
+const tracks =
+res?.tracks || [];
         /*
         IMPORTANT FIX:
         prevent crash when
