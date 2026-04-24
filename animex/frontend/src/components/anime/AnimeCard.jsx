@@ -13,47 +13,53 @@ export default function AnimeCard({
   */
 
   const id =
-    anime.id ||
-    anime.mal_id ||
-    anime.animeId ||
-    anime.entry?.mal_id;
+    anime?.id ||
+    anime?.mal_id ||
+    anime?.animeId ||
+    anime?.entry?.mal_id;
 
   if (!id) return null;
 
   const name =
-    anime.name ||
-    anime.title ||
-    anime.title_english ||
-    anime.animeName ||
-    anime.entry?.name ||
+    anime?.name ||
+    anime?.title ||
+    anime?.title_english ||
+    anime?.animeName ||
+    anime?.entry?.name ||
     'Unknown Anime';
 
   const poster =
-    anime.poster ||
-    anime.images?.jpg?.large_image_url ||
-    anime.images?.jpg?.image_url ||
-    anime.image ||
-    anime.animeImage ||
-    anime.entry?.images?.jpg?.large_image_url ||
-    anime.entry?.images?.jpg?.image_url ||
+    anime?.poster ||
+    anime?.images?.jpg?.large_image_url ||
+    anime?.images?.jpg?.image_url ||
+    anime?.image ||
+    anime?.animeImage ||
+    anime?.entry?.images?.jpg?.large_image_url ||
+    anime?.entry?.images?.jpg?.image_url ||
     '/no-poster.svg';
 
   const type =
-    anime.type ||
-    anime.animeType ||
-    anime.media_type ||
+    anime?.type ||
+    anime?.animeType ||
+    anime?.media_type ||
     '';
 
   const rating =
-    anime.rating ||
-    anime.score ||
-    anime.scored ||
+    anime?.rating ||
+    anime?.score ||
+    anime?.scored ||
     null;
 
+  /*
+  SAFE episodes handling
+  prevents React error #31
+  */
   const episodes =
-    anime.episodes?.sub ||
-    anime.episodes ||
-    null;
+    anime?.episodes?.sub != null
+      ? anime.episodes.sub
+      : typeof anime?.episodes === 'number'
+      ? anime.episodes
+      : null;
 
   const progressPercent =
     progress?.percent || 0;
@@ -112,12 +118,11 @@ export default function AnimeCard({
           </div>
         )}
 
-        {episodes && (
+        {episodes != null && (
           <div
             className="tick-item tick-sub"
             style={{
-              position:
-                'absolute',
+              position: 'absolute',
               bottom: 8,
               left: 8
             }}
@@ -126,8 +131,7 @@ export default function AnimeCard({
           </div>
         )}
 
-        {progressPercent >
-          0 && (
+        {progressPercent > 0 && (
           <div className="progress-bar">
             <div
               className="progress-bar-fill"
@@ -144,9 +148,7 @@ export default function AnimeCard({
 
       <div className="film-detail">
         <h3 className="film-name">
-          <Link
-            href={`/anime/${id}`}
-          >
+          <Link href={`/anime/${id}`}>
             {name}
           </Link>
         </h3>
@@ -156,7 +158,7 @@ export default function AnimeCard({
             <span>{type}</span>
           )}
 
-          {episodes && (
+          {episodes != null && (
             <span>
               • EP {episodes}
             </span>
@@ -173,8 +175,7 @@ export function AnimeCardSkeleton() {
       <div
         className="skeleton"
         style={{
-          paddingBottom:
-            '140%',
+          paddingBottom: '140%',
           borderRadius: 6
         }}
       />
