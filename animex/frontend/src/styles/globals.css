@@ -60,8 +60,8 @@
   scrollbar-color: var(--border) var(--bg-body);
 
   /* Sidebar width */
-  
-  
+  --header-h:  65px;
+  --sidebar-w: 240px;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -89,11 +89,6 @@ input, select, textarea { font-family: var(--font-body); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 ::selection { background: var(--accent-dim); color: var(--accent); }
-
-/* ═══════════════════════════════════════════════════════════════
-   LAYOUT
-   ═══════════════════════════════════════════════════════════════ */
-
 
 /* ═══════════════════════════════════════════════════════════════
    FILM CARDS
@@ -586,131 +581,6 @@ input, select, textarea { font-family: var(--font-body); }
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   RESPONSIVE — DESKTOP → MOBILE
-   ═══════════════════════════════════════════════════════════════ */
-
-/* Large desktop */
-@media (max-width: 1400px) { .film-grid-6 { grid-template-columns: repeat(6, 1fr); } }
-@media (max-width: 1200px) { .film-grid-6 { grid-template-columns: repeat(5, 1fr); } }
-@media (max-width: 1024px) { .film-grid-6 { grid-template-columns: repeat(4, 1fr); } }
-
-/* Tablet — sidebar slides off */
-@media (max-width: 960px) {
-  #site-sidebar {
-    position: fixed;
-    top: var(--header-h);
-    left: -300px;
-    bottom: 0;
-    z-index: 1200;
-    transform: none;
-    transition: left 0.3s ease;
-    box-shadow: none;
-  }
-
-  #site-sidebar.open {
-    left: 0;
-    transform: none;
-    box-shadow: 6px 0 40px rgba(0,0,0,0.7);
-  }
-
- .desi-head-title { font-size: 30px; }
-  .deslide-item { height: 360px; }
-  .deslide-content { left: 20px; right: 20px; bottom: 28px; max-width: none; }
-  .watch-grid { flex-direction: column; }
-  .watch-sidebar { width: 100%; min-width: 0; position: static; }
-  .anime-info-grid { gap: 18px; }
-  .film-grid-6 { grid-template-columns: repeat(4, 1fr); }
-  .home-right-sidebar { display: none !important; }
-}
-/* Mobile — below 640px */
-@media (max-width: 640px) {
-  :root {  }
-
-
-  .deslide-item { height: 280px; }
-  .deslide-content { left: 14px; right: 14px; bottom: 20px; }
-  .desi-head-title { font-size: 22px; margin-bottom: 6px; }
-  .desi-desc { display: none; }
-  .desi-meta { gap: 7px; margin-bottom: 8px; }
-  .desi-btns { gap: 8px; }
-  .btn-watch, .btn-detail { height: 36px; padding: 0 14px; font-size: 12px; }
-
-  /* Cards */
-  .film-grid, .film-grid-6 { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .film-row .flw-item { width: 118px; }
-  .film-name { font-size: 11px; }
-
-  /* Section headers */
-  .cat-heading { font-size: 16px; }
-  .block_area { margin-bottom: 20px; }
-
-  /* Anime detail */
-  .anime-hero { height: 220px; }
-  .anime-detail-wrap { padding: 0 12px 32px; margin-top: -100px; }
-  .anime-info-grid { flex-direction: column; align-items: center; text-align: center; }
-  .anime-poster-img { width: 140px; }
-  .anime-actions { width: 140px; }
-  .stat-badges { justify-content: center; }
-  .genre-tags { justify-content: center; }
-  .chars-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
-
-  /* Watch page */
-  .watch-wrap { padding: 10px 10px 72px; }
-  .player-controls { gap: 5px; }
-  .ctrl-btn { padding: 4px 8px; font-size: 11px; }
-  .cat-toggle-btn { padding: 4px 8px; font-size: 10px; }
-  .server-select { font-size: 11px; }
-
-  /* Auth */
-  .auth-card { padding: 22px 16px; border-radius: 10px; margin: 0 12px; max-width: none; }
-
-  /* Pages */
-  .page-inner { padding: 14px 12px 72px; }
-
-  /* Trending strip */
-  .trending-strip { padding: 7px 12px; gap: 10px; }
-  .trending-label { font-size: 9px; }
-  .trending-pill { font-size: 11px; padding: 3px 8px 3px 3px; }
-
-  .home-right-sidebar { display: none !important; }
-
-  /* Schedule page */
-  .sched-tab { padding: 7px 10px; font-size: 10px; }
-
-  /* AZ list */
-  .az-letters { gap: 4px; }
-}
-
-/* Small phones */
-@media (max-width: 390px) {
-  .film-grid, .film-grid-6 { grid-template-columns: repeat(3, 1fr); gap: 6px; }
-  .film-row .flw-item { width: 108px; }
-  .desi-head-title { font-size: 19px; }
-  .deslide-item { height: 240px; }
-}
-
-/* ══════════════════════════════════════════════
-   KEYBOARD SHORTCUT OVERLAY
-   ══════════════════════════════════════════════ */
-.shortcuts-overlay {
-  position: fixed; inset: 0;
-  background: rgba(10,10,15,0.85); backdrop-filter: blur(6px);
-  z-index: 9000; display: flex; align-items: center; justify-content: center;
-  animation: fadeIn 0.2s ease;
-}
-.shortcuts-box {
-  background: var(--bg-card-alt); border: 1px solid var(--border-light);
-  border-radius: 14px; padding: 28px; width: calc(100% - 32px); max-width: 480px;
-  max-height: 80vh; overflow-y: auto;
-  animation: scaleIn 0.2s ease;
-}
-.shortcuts-box h2 { font-family: var(--font-display); font-size: 22px; color: var(--accent); margin-bottom: 18px; }
-.shortcut-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
-.shortcut-row:last-child { border-bottom: none; }
-.shortcut-desc { font-size: 13px; color: var(--text-2); }
-.shortcut-key { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 5px; padding: 3px 8px; font-size: 12px; font-weight: 600; color: var(--accent); font-family: monospace; }
-
-/* ═══════════════════════════════════════════════════════════════
    LAYOUT
    ═══════════════════════════════════════════════════════════════ */
 :root {
@@ -732,7 +602,7 @@ input, select, textarea { font-family: var(--font-body); }
   height: var(--header-h);
   background: var(--bg-header);
   border-bottom: 1px solid var(--border);
-  z-index: 200;
+  z-index: 1300; /* 🔥 FIXED: Now stays above the overlay so 'X' works */
   display: flex; align-items: center;
   padding: 0 18px; gap: 12px;
 }
@@ -842,10 +712,6 @@ input, select, textarea { font-family: var(--font-body); }
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   NEW: DUAL-LAYOUT NAVIGATION (MOBILE GRID + DESKTOP TOP BAR)
-   ═══════════════════════════════════════════════════════════════ */
-
-/* ═══════════════════════════════════════════════════════════════
    CLEAN NAVIGATION: MOBILE GRID + DESKTOP TOP BAR
    ═══════════════════════════════════════════════════════════════ */
 
@@ -861,14 +727,14 @@ input, select, textarea { font-family: var(--font-body); }
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--text-2) !important;
+  color: var(--accent) !important; /* 🔥 FIXED: Now Zoro Green */
   font-size: 13px;
   font-weight: 600;
   transition: var(--trans-fast);
 }
 
 .d-nav-link:hover {
-  color: var(--accent) !important;
+  color: var(--text-1) !important;
 }
 
 /* --- Mobile Sidebar (Grid) --- */
@@ -890,18 +756,18 @@ input, select, textarea { font-family: var(--font-body); }
   align-items: center;
   gap: 6px;
   text-decoration: none !important;
-  color: var(--text-2) !important; 
+  color: var(--accent) !important; /* 🔥 FIXED: Now Zoro Green */
 }
 
 .m-feat-item span {
   font-size: 10px;
   font-weight: 700;
-  color: var(--text-3);
+  color: var(--text-2);
   text-transform: uppercase;
 }
 
 .m-feat-item svg {
-  color: var(--text-2);
+  color: var(--accent) !important; /* 🔥 FIXED: Now Zoro Green */
 }
 
 .m-lang-badge {
@@ -938,4 +804,3 @@ input, select, textarea { font-family: var(--font-body); }
 @media (min-width: 1100px) {
   .sb-mobile-grid { display: none !important; }
 }
-
