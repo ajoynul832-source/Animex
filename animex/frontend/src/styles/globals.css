@@ -879,72 +879,52 @@ input, select, textarea { font-family: var(--font-body); }
    NEW: DUAL-LAYOUT NAVIGATION (MOBILE GRID + DESKTOP TOP BAR)
    ═══════════════════════════════════════════════════════════════ */
 
-/* --- 1. Desktop Navbar Icons --- */
+/* ═══════════════════════════════════════════════════════════════
+   CLEAN NAVIGATION: MOBILE GRID + DESKTOP TOP BAR
+   ═══════════════════════════════════════════════════════════════ */
+
+/* --- Desktop Navbar (Top Bar) --- */
 .desktop-nav-features {
   display: flex;
   align-items: center;
   gap: 18px;
-  margin-left: 10px;
+  margin-left: 15px;
 }
 
 .d-nav-link {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--text-2);
+  color: var(--text-2) !important;
   font-size: 13px;
   font-weight: 600;
   transition: var(--trans-fast);
 }
 
 .d-nav-link:hover {
-  color: var(--accent);
+  color: var(--accent) !important;
 }
 
-.d-nav-link span {
-  font-family: var(--font-body);
-}
-
-/* --- 2. Mobile Sidebar Grid & Header --- */
-.sb-mobile-header {
-  padding: 15px;
-  display: flex;
-  align-items: center;
-}
-
-.close-menu-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--bg-card-alt);
-  border: 1px solid var(--border);
-  color: var(--text-1);
-  padding: 7px 14px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-  font-family: var(--font-display);
-  text-transform: uppercase;
-}
-
+/* --- Mobile Sidebar (Grid) --- */
 .sb-mobile-grid {
-  padding: 0 15px 15px;
+  padding: 20px 15px;
   border-bottom: 1px solid var(--border);
 }
 
 .m-feat-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 15px;
 }
 
 .m-feat-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  text-align: center;
+  gap: 6px;
+  text-decoration: none !important;
+  color: var(--text-2) !important; 
 }
 
 .m-feat-item span {
@@ -952,6 +932,10 @@ input, select, textarea { font-family: var(--font-body); }
   font-weight: 700;
   color: var(--text-3);
   text-transform: uppercase;
+}
+
+.m-feat-item svg {
+  color: var(--text-2);
 }
 
 .m-lang-badge {
@@ -984,17 +968,21 @@ input, select, textarea { font-family: var(--font-body); }
   background: var(--accent-dim);
 }
 
-/* --- 3. The Responsive "Switch" --- */
+/* --- Responsive Switching Logic --- */
 @media (min-width: 1100px) {
-  /* On PC: Hide the Mobile Sidebar Grid */
-  .sb-mobile-header, .sb-mobile-grid { 
-    display: none !important; 
-  }
+  .sb-mobile-grid { display: none !important; }
 }
 
 @media (max-width: 1099px) {
-  /* On Mobile: Hide the Desktop Top Bar Icons */
-  .desktop-nav-features { 
-    display: none !important; 
+  .desktop-nav-features { display: none !important; }
+  
+  #sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 150;
+    backdrop-filter: blur(2px);
+    display: none;
   }
+  #sidebar-overlay.active { display: block; }
 }
