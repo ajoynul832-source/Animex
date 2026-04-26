@@ -697,8 +697,8 @@ input, select, textarea { font-family: var(--font-body); }
 @media (max-width: 1200px) { .film-grid-6 { grid-template-columns: repeat(5,1fr); } }
 @media (max-width: 1024px) { .film-grid-6 { grid-template-columns: repeat(4,1fr); } }
 
-@media (max-width: 1099px) {
-  .desktop-nav-features { display: none !important; }
+@media (max-width: 799px) {
+.desktop-nav-features { display: none !important; }
 
   #sidebar-overlay {
     position: fixed;
@@ -801,7 +801,7 @@ input, select, textarea { font-family: var(--font-body); }
 }
 
 /* --- Responsive Switching Logic --- */
-@media (min-width: 1100px) {
+@media (min-width: 800px) {
   .sb-mobile-grid { display: none !important; }
 }
 
@@ -843,4 +843,12 @@ input, select, textarea { font-family: var(--font-body); }
   .film-grid, .film-grid-6 { grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .film-row .flw-item { width: 108px; }
   .desi-head-title { font-size: 19px; }
+}
+
+/* Squeeze the header to fit on smaller desktop screens (like iPads or phone desktop mode) */
+@media (max-width: 1099px) and (min-width: 800px) {
+  .desktop-nav-features { gap: 10px; margin-left: 10px; }
+  .d-nav-link { font-size: 11px; }
+  .header-search { max-width: 250px !important; } /* Shrinks the giant search bar */
+  .hdr-btn-primary, .hdr-btn { padding: 0 10px; font-size: 11px; }
 }
