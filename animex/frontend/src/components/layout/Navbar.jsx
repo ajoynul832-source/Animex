@@ -34,6 +34,7 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', fn);
   }, []);
 
+  // --- Controls Sidebar Open/Close & Overlay ---
   useEffect(() => {
     const sb = document.getElementById('site-sidebar');
     const ov = document.getElementById('sidebar-overlay');
@@ -47,6 +48,21 @@ export default function Navbar() {
     }
   }, [sbOpen]);
 
+  // --- NEW: Click Anywhere to Close ---
+  useEffect(() => {
+    const ov = document.getElementById('sidebar-overlay');
+    const handleClose = () => setSbOpen(false);
+    
+    if (ov) {
+      ov.addEventListener('click', handleClose);
+    }
+    
+    return () => {
+      if (ov) ov.removeEventListener('click', handleClose);
+    };
+  }, []);
+
+  // Close everything when changing pages
   useEffect(() => { setUserOpen(false); setSugs([]); setSbOpen(false); }, [pathname]);
 
   const search = (e) => {
@@ -65,7 +81,7 @@ export default function Navbar() {
 
       <Link href="/home" className="header-logo">ANIME<span>X</span></Link>
 
-      {/* --- ADDED: Desktop Navigation Features --- */}
+      {/* --- Desktop Navigation Features (Now Zoro Green) --- */}
       <nav className="desktop-nav-features">
         <Link href="/watch2gether" className="d-nav-link">
           <Tv2 size={16} /> <span>Watch2gether</span>
