@@ -3,12 +3,13 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { 
-  Search, Menu, X, ChevronDown, User, LogOut, Bookmark, History, Settings, 
-  Tv2, Shuffle, Newspaper, MessageSquare 
+  Search, Menu, X, ChevronDown, User, LogOut, Bookmark, History, Settings,
+  Tv2, Shuffle, Newspaper, MessageSquare // <-- Added new icons here
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { searchApi } from '@/lib/api';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -18,6 +19,7 @@ export default function Navbar() {
   const [sugs,     setSugs]     = useState([]);
   const [userOpen, setUserOpen] = useState(false);
   const [sbOpen,   setSbOpen]   = useState(false);
+  const [avatar] = useLocalStorage('animex_avatar', '');
   const debouncedQuery = useDebounce(query, 280);
   const userRef = useRef(null);
 
@@ -34,7 +36,7 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', fn);
   }, []);
 
-  // --- Controls Sidebar Open/Close & Overlay ---
+  // --- UPDATED: Toggles the invisible overlay along with the sidebar ---
   useEffect(() => {
     const sb = document.getElementById('site-sidebar');
     const ov = document.getElementById('sidebar-overlay');
@@ -48,7 +50,7 @@ export default function Navbar() {
     }
   }, [sbOpen]);
 
-  // --- NEW: Click Anywhere to Close ---
+  // --- NEW: Click anywhere on the overlay to close the sidebar ---
   useEffect(() => {
     const ov = document.getElementById('sidebar-overlay');
     const handleClose = () => setSbOpen(false);
@@ -62,7 +64,6 @@ export default function Navbar() {
     };
   }, []);
 
-  // Close everything when changing pages
   useEffect(() => { setUserOpen(false); setSugs([]); setSbOpen(false); }, [pathname]);
 
   const search = (e) => {
@@ -81,7 +82,7 @@ export default function Navbar() {
 
       <Link href="/home" className="header-logo">ANIME<span>X</span></Link>
 
-      {/* --- Desktop Navigation Features (Now Zoro Green) --- */}
+      {/* --- NEW: Desktop Navigation Features --- */}
       <nav className="desktop-nav-features">
         <Link href="/watch2gether" className="d-nav-link">
           <Tv2 size={16} /> <span>Watch2gether</span>
@@ -100,7 +101,6 @@ export default function Navbar() {
         </Link>
       </nav>
 
-      {/* Search */}
       <div className="header-search" style={{ flex: 1, maxWidth: 520 }}>
         <form onSubmit={search} style={{ position: 'relative' }}>
           <input
@@ -113,7 +113,6 @@ export default function Navbar() {
           />
           <button type="submit" className="header-search-btn"><Search size={15} /></button>
         </form>
-
         {sugs.length > 0 && (
           <div className="search-suggestions">
             {sugs.map((s, i) => (
@@ -140,7 +139,12 @@ export default function Navbar() {
         {user ? (
           <div className="user-menu" ref={userRef}>
             <button className="user-trigger" onClick={() => setUserOpen(o => !o)}>
-              <div className="user-av">{user.name[0].toUpperCase()}</div>
+              <div className="user-av">
+                {avatar
+                  ? <img src={avatar} alt="avatar" style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                  : user.name[0].toUpperCase()
+                }
+              </div>
               <span className="user-trigger-name">{user.name}</span>
               <ChevronDown size={12} style={{ color: 'var(--text-4)', transition: 'transform .2s', transform: userOpen ? 'rotate(180deg)' : 'none', flexShrink: 0 }} />
             </button>
