@@ -2,7 +2,10 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, Menu, X, ChevronDown, User, LogOut, Bookmark, History, Settings } from 'lucide-react';
+import { 
+  Search, Menu, X, ChevronDown, User, LogOut, Bookmark, History, Settings, 
+  Tv2, Shuffle, Newspaper, MessageSquare 
+} from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { searchApi } from '@/lib/api';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -33,8 +36,15 @@ export default function Navbar() {
 
   useEffect(() => {
     const sb = document.getElementById('site-sidebar');
+    const ov = document.getElementById('sidebar-overlay');
     if (!sb) return;
-    if (sbOpen) sb.classList.add('open'); else sb.classList.remove('open');
+    if (sbOpen) {
+      sb.classList.add('open');
+      ov?.classList.add('active');
+    } else {
+      sb.classList.remove('open');
+      ov?.classList.remove('active');
+    }
   }, [sbOpen]);
 
   useEffect(() => { setUserOpen(false); setSugs([]); setSbOpen(false); }, [pathname]);
@@ -55,6 +65,26 @@ export default function Navbar() {
 
       <Link href="/home" className="header-logo">ANIME<span>X</span></Link>
 
+      {/* --- ADDED: Desktop Navigation Features --- */}
+      <nav className="desktop-nav-features">
+        <Link href="/watch2gether" className="d-nav-link">
+          <Tv2 size={16} /> <span>Watch2gether</span>
+        </Link>
+        <Link href="/random" className="d-nav-link">
+          <Shuffle size={16} /> <span>Random</span>
+        </Link>
+        <div className="d-nav-link">
+          <div className="m-lang-badge">EN JP</div> <span>Anime Name</span>
+        </div>
+        <Link href="/news" className="d-nav-link">
+          <Newspaper size={16} /> <span>News</span>
+        </Link>
+        <Link href="/community" className="d-nav-link">
+          <MessageSquare size={16} /> <span>Community</span>
+        </Link>
+      </nav>
+
+      {/* Search */}
       <div className="header-search" style={{ flex: 1, maxWidth: 520 }}>
         <form onSubmit={search} style={{ position: 'relative' }}>
           <input
@@ -67,6 +97,7 @@ export default function Navbar() {
           />
           <button type="submit" className="header-search-btn"><Search size={15} /></button>
         </form>
+
         {sugs.length > 0 && (
           <div className="search-suggestions">
             {sugs.map((s, i) => (
